@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using DistributedLocker.Extensions;
 using DistributedLocker.Internal;
 using System;
 using System.Threading;
@@ -14,6 +15,10 @@ namespace DistributedLocker.DataBase
 
         private readonly IDatabaseDistributedLockAdapter _adapter = null;
 
+        private readonly ILockOptions _options = null;
+
+        private readonly bool? _useCache = false;
+
         public DatabaseDistributedLock(IDatabaseDistributedLockAdapter adapter,
             ILockOptions options)
             : base(options)
@@ -21,6 +26,11 @@ namespace DistributedLocker.DataBase
             UtilMethods.ThrowIfNull(adapter, nameof(adapter));
 
             _adapter = adapter;
+
+            _options = options;
+
+            _useCache = _options.FindExtension<CoreLockOptionsExtension>()
+                            .UseMemoryCache;
 
             this.EnsureCreated();
         }
@@ -46,7 +56,21 @@ namespace DistributedLocker.DataBase
             }
         }
 
-        public override async ValueTask<Locker> EnterAsync(Lockey lockey, LockParameter param)
+        public override ValueTask<Locker> EnterAsync(Lockey lockey, LockParameter param)
+        {
+            if (_useCache == true)
+            {
+                return this.EnterAsync(
+                        lockey,
+                        this.EnterCoreAsync,
+                        param);
+            }
+            else
+            {
+                return this.EnterCoreAsync(lockey, param);
+            }
+        }
+        protected virtual async ValueTask<Locker> EnterCoreAsync(Lockey lockey, LockParameter param)
         {
             if (param == null)
             {
@@ -121,13 +145,28 @@ namespace DistributedLocker.DataBase
                 locker = this.EnterAsync(lockey, parameter).Result;
                 return UtilMethods.ValueTaskFromResult(true);
             }
-            catch (Exception)
+            catch (LockConflictException)
             {
                 locker = null;
                 return UtilMethods.ValueTaskFromResult(false);
             }
         }
-        public override async ValueTask KeepAsync(Lockey lockey, TimeSpan span)
+
+        public override ValueTask KeepAsync(Lockey lockey, TimeSpan span)
+        {
+            if (_useCache == true)
+            {
+                return this.KeepAsync(
+                        lockey,
+                        this.KeepCoreAsync, 
+                        span);
+            }
+            else
+            {
+                return this.KeepCoreAsync(lockey, span);
+            }
+        }
+        protected virtual async ValueTask KeepCoreAsync(Lockey lockey, TimeSpan span)
         {
             UtilMethods.ThrowIfNull(lockey, nameof(lockey));
 
@@ -151,7 +190,21 @@ namespace DistributedLocker.DataBase
                 }
             }
         }
-        public override async ValueTask ExitAsync(Lockey lockey)
+
+        public override ValueTask ExitAsync(Lockey lockey)
+        {
+            if (_useCache == true)
+            {
+                return this.ExitAsync(
+                        lockey,
+                        this.ExitCoreAsync);
+            }
+            else
+            {
+                return this.ExitCoreAsync(lockey);
+            }
+        }
+        protected virtual async ValueTask ExitCoreAsync(Lockey lockey)
         {
             UtilMethods.ThrowIfNull(lockey, nameof(lockey));
 
@@ -166,8 +219,22 @@ namespace DistributedLocker.DataBase
         }
 
 
-
         public override Locker Enter(Lockey lockey, LockParameter param)
+        {
+            if (_useCache == true)
+            {
+                return this.Enter(
+                        lockey,
+                        this.EnterCore,
+                        param);
+            }
+            else
+            {
+                return this.EnterCore(lockey, param);
+            }
+        }
+
+        protected virtual Locker EnterCore(Lockey lockey, LockParameter param)
         {
             if (param == null)
             {
@@ -240,13 +307,27 @@ namespace DistributedLocker.DataBase
                 locker = this.Enter(lockey, parameter);
                 return true;
             }
-            catch (Exception)
+            catch (LockConflictException)
             {
                 locker = null;
                 return false;
             }
         }
+
         public override void Keep(Lockey lockey, TimeSpan span)
+        {
+            if (_useCache == true)
+            {
+                this.Keep(lockey,
+                    this.KeepCore,
+                    span);
+            }
+            else
+            {
+                this.KeepCore(lockey, span);
+            }
+        }
+        protected virtual void KeepCore(Lockey lockey, TimeSpan span)
         {
             UtilMethods.ThrowIfNull(lockey, nameof(lockey));
 
@@ -271,6 +352,18 @@ namespace DistributedLocker.DataBase
             }
         }
         public override void Exit(Lockey lockey)
+        {
+            if (_useCache == true)
+            {
+                this.Exit(lockey,
+                    this.ExitCore);
+            }
+            else
+            {
+                this.ExitCore(lockey);
+            }
+        }
+        protected virtual void ExitCore(Lockey lockey)
         {
             UtilMethods.ThrowIfNull(lockey, nameof(lockey));
 

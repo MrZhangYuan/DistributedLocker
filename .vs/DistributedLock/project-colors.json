@@ -30,7 +30,22 @@
       "ProjectGuid": "b5bdb08e-510e-4b40-9da5-c10f4542166d",
       "DisplayName": "DistributedLocker.Redis",
       "ColorIndex": 4
+    },
+    "eb2fccc8-4689-4d2a-afc7-ddcdf0ffc00d": {
+      "ProjectGuid": "eb2fccc8-4689-4d2a-afc7-ddcdf0ffc00d",
+      "DisplayName": "DistributedLocker",
+      "ColorIndex": 5
+    },
+    "aba746b1-bf3d-47dc-83b0-40f48cf2c61f": {
+      "ProjectGuid": "aba746b1-bf3d-47dc-83b0-40f48cf2c61f",
+      "DisplayName": "DistributedLocker.DataBase",
+      "ColorIndex": 6
+    },
+    "08f97ccc-0bbc-48f0-83a5-9adb4651c13b": {
+      "ProjectGuid": "08f97ccc-0bbc-48f0-83a5-9adb4651c13b",
+      "DisplayName": "TestDemo",
+      "ColorIndex": 7
     }
   },
-  "NextColorIndex": 5
+  "NextColorIndex": 8
 }
