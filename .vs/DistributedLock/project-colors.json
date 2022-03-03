@@ -1,0 +1,36 @@
+{
+  "Version": 1,
+  "ProjectMap": {
+    "15cbbb0e-7b86-4632-848a-dd986a8e2767": {
+      "ProjectGuid": "15cbbb0e-7b86-4632-848a-dd986a8e2767",
+      "DisplayName": "TestDemo",
+      "ColorIndex": 0
+    },
+    "42962ac8-4b17-4215-b0a5-b8b44bc32cc5": {
+      "ProjectGuid": "42962ac8-4b17-4215-b0a5-b8b44bc32cc5",
+      "DisplayName": "DistributedLocker",
+      "ColorIndex": 1
+    },
+    "f44ca851-40c8-474d-aa11-6ccfbdf242d8": {
+      "ProjectGuid": "f44ca851-40c8-474d-aa11-6ccfbdf242d8",
+      "DisplayName": "DistributedLocker.DataBase",
+      "ColorIndex": 2
+    },
+    "a2fe74e1-b743-11d0-ae1a-00a0c90fffc3": {
+      "ProjectGuid": "a2fe74e1-b743-11d0-ae1a-00a0c90fffc3",
+      "DisplayName": "杂项文件",
+      "ColorIndex": -1
+    },
+    "757bfff6-463d-472f-b977-d2232a1626cb": {
+      "ProjectGuid": "757bfff6-463d-472f-b977-d2232a1626cb",
+      "DisplayName": "DistributedLocker.Oracle",
+      "ColorIndex": 3
+    },
+    "b5bdb08e-510e-4b40-9da5-c10f4542166d": {
+      "ProjectGuid": "b5bdb08e-510e-4b40-9da5-c10f4542166d",
+      "DisplayName": "DistributedLocker.Redis",
+      "ColorIndex": 4
+    }
+  },
+  "NextColorIndex": 5
+}

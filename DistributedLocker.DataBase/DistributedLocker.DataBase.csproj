@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\DistributedLocker\Internal\UtilMethods.cs" Link="Internal\UtilMethods.cs" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Dapper" Version="2.0.123" />
+	</ItemGroup>
+	
+  <ItemGroup>
+    <ProjectReference Include="..\DistributedLocker\DistributedLocker.csproj" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <Folder Include="Internal\" />
+  </ItemGroup>
+
+</Project>
