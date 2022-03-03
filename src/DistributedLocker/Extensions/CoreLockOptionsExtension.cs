@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace DistributedLocker.Extensions
 {
@@ -11,6 +12,11 @@ namespace DistributedLocker.Extensions
         private int _defaultKeepDuation = 100;
         private bool _useMemoryCache = false;
         private bool _autoKeep = false;
+
+        /// <summary>
+        ///     持久化锁的过期时间
+        /// </summary>
+        private TimeSpan _persistenceExpiredTime = TimeSpan.FromDays(30);
 
         public ConflictPloy DefaultConflictPloy
         {

@@ -1,9 +1,0 @@
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker.Redis\bin\Debug\netstandard2.0\DistributedLocker.Redis.deps.json
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker.Redis\bin\Debug\netstandard2.0\DistributedLocker.Redis.dll
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker.Redis\bin\Debug\netstandard2.0\DistributedLocker.Redis.pdb
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker.Redis\obj\Debug\netstandard2.0\DistributedLocker.Redis.GeneratedMSBuildEditorConfig.editorconfig
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker.Redis\obj\Debug\netstandard2.0\DistributedLocker.Redis.AssemblyInfoInputs.cache
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker.Redis\obj\Debug\netstandard2.0\DistributedLocker.Redis.AssemblyInfo.cs
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker.Redis\obj\Debug\netstandard2.0\DistributedLocker.Redis.csproj.CoreCompileInputs.cache
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker.Redis\obj\Debug\netstandard2.0\DistributedLocker.Redis.dll
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker.Redis\obj\Debug\netstandard2.0\DistributedLocker.Redis.pdb

@@ -1,9 +1,0 @@
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker\bin\Debug\netstandard2.0\DistributedLocker.deps.json
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker\bin\Debug\netstandard2.0\DistributedLocker.dll
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker\bin\Debug\netstandard2.0\DistributedLocker.pdb
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker\obj\Debug\netstandard2.0\DistributedLocker.GeneratedMSBuildEditorConfig.editorconfig
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker\obj\Debug\netstandard2.0\DistributedLocker.AssemblyInfoInputs.cache
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker\obj\Debug\netstandard2.0\DistributedLocker.AssemblyInfo.cs
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker\obj\Debug\netstandard2.0\DistributedLocker.csproj.CoreCompileInputs.cache
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker\obj\Debug\netstandard2.0\DistributedLocker.dll
-D:\Files\OpenSource\Github\DistributedLock\DistributedLocker\obj\Debug\netstandard2.0\DistributedLocker.pdb

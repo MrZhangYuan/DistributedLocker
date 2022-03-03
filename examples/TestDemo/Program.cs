@@ -1,5 +1,6 @@
 ﻿using DistributedLocker;
 using DistributedLocker.Extensions;
+using DistributedLocker.Memory.Extensions;
 using DistributedLocker.Oracle.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -19,7 +20,8 @@ namespace TestDemo
 
             services.AddDistributedLock(_p =>
             {
-                _p.UseOracleLock("connectionstring")
+                //_p.UseOracleLock("User Id=emrmix;Password=Synyi123;Data Source=172.16.1.151:1521/emrmix;")
+                _p.UseMemoryLock()
                     .WidthRetryInterval(20)
                     .WidthMemoryCache(true)
                     .WidthDuation(200)
@@ -30,7 +32,7 @@ namespace TestDemo
             });
 
             var provider = services.BuildServiceProvider();
-            var scope = provider.CreateScope();
+            using var scope = provider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<DistributedLockContext>();
 
             for (int i = 0; true; i++)

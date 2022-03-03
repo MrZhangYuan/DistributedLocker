@@ -29,7 +29,6 @@ namespace DistributedLocker
             _options.WidthExtension<TExtension>(extension);
         }
 
-
         public LockOptionsBuilder WidthConflictPloy(ConflictPloy conflictploy)
         {
             return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthConflictPloy(conflictploy));

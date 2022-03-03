@@ -55,6 +55,35 @@ namespace DistributedLocker
             };
         }
 
+        protected virtual void ThrowIfConflicted(Locker exists,
+            LockParameter param,
+            ref int retrys)
+        {
+            switch (param.ConflictPloy)
+            {
+                case ConflictPloy.Exception:
+                    throw new LockConflictException(exists, param.ConflictMsg);
+
+                case ConflictPloy.Wait:
+                    if (retrys < param.RetryTimes)
+                    {
+                        retrys++;
+
+                        break;
+                    }
+                    throw new LockConflictException(exists, param.ConflictMsg);
+
+                case ConflictPloy.Execute:
+                    {
+                        param.OnConflict?.Invoke(exists);
+                    }
+                    throw new LockConflictException(exists, param.ConflictMsg);
+
+                default:
+                    throw new InvalidOperationException();
+            }
+        }
+
         public abstract Locker Enter(Lockey lockey, LockParameter parameter);
         public abstract bool TryEnter(Lockey lockey, LockParameter parameter, out Locker locker);
         public abstract void Keep(Lockey lockey, TimeSpan span);
