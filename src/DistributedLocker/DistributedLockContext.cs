@@ -5,11 +5,13 @@ using System.Threading.Tasks;
 
 namespace DistributedLocker
 {
-    public class DistributedLockContext
+    public class DistributedLockContext : DisposableObject
     {
         private readonly IAsyncDistributedLock _distributedLock;
 
         private readonly ILockOptions _options = null;
+
+        private readonly IServiceProvider _internalProvider;
 
         public DistributedLockContext(ILockOptions options)
         {
@@ -17,8 +19,10 @@ namespace DistributedLocker
 
             _options = options;
 
-            _distributedLock = ProviderFactory
-                                .GetProvider(options)
+            _internalProvider = ProviderFactory
+                                .GetProvider(options);
+
+            _distributedLock = _internalProvider
                                 .GetRequiredService<IAsyncDistributedLock>();
 
             UtilMethods.ThrowIfNull(_distributedLock, nameof(_distributedLock));
@@ -92,16 +96,30 @@ namespace DistributedLocker
         }
 
 
+        public IAsyncLockScope CreateScope(Lockey lockey, Locker locker, LockParameter param)
+        {
+            var scope = new DistributedLockScope(
+                        this,
+                        lockey,
+                        locker,
+                        param,
+                        this._options);
+
+            _internalProvider
+                .GetRequiredService<IAutoKeeper>()
+                .AddLockScope(scope);
+
+            return scope;
+        }
+
         public async ValueTask<IAsyncLockScope> BeginAsync(Lockey lockey, LockParameter parameter)
         {
             var locker = await this._distributedLock.EnterAsync(lockey, parameter);
 
-            return new DistributedLockScope(
-                    this,
+            return CreateScope(
                     lockey,
                     locker,
-                    parameter,
-                    this._options);
+                    parameter);
         }
 
         private async ValueTask KeepAsync(Lockey lockey, TimeSpan span)
@@ -120,12 +138,10 @@ namespace DistributedLocker
         {
             var locker = this._distributedLock.Enter(lockey, parameter);
 
-            return new DistributedLockScope(
-                    this,
+            return CreateScope(
                     lockey,
                     locker,
-                    parameter,
-                    this._options);
+                    parameter);
         }
 
         public bool TryBegin(Lockey lockey,
@@ -134,12 +150,10 @@ namespace DistributedLocker
         {
             if (this._distributedLock.TryEnter(lockey, parameter, out Locker locker))
             {
-                scope = new DistributedLockScope(
-                        this,
+                scope = CreateScope(
                         lockey,
                         locker,
-                        parameter,
-                        this._options);
+                        parameter);
 
                 return true;
             }
@@ -156,6 +170,26 @@ namespace DistributedLocker
         public void End(Lockey lockey)
         {
             this._distributedLock.Exit(lockey);
+        }
+
+        protected override void DisposeManagedResources()
+        {
+            base.DisposeManagedResources();
+
+            if (_internalProvider is IDisposable provider)
+            {
+                provider.Dispose();
+            }
+        }
+
+        protected override async ValueTask DisposeAsyncCore()
+        {
+            await base.DisposeAsyncCore();
+
+            if (_internalProvider is IAsyncDisposable provider)
+            {
+                await provider.DisposeAsync();
+            }
         }
     }
 

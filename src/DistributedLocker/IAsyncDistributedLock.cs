@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace DistributedLocker
 {
-    public interface IAsyncDistributedLock : IDistributedLock
+    public interface IAsyncDistributedLock : IDistributedLock, IAsyncDisposable
     {
         ValueTask<Locker> EnterAsync(Lockey lockey, LockParameter parameter);
         ValueTask<bool> TryEnterAsync(Lockey lockey, LockParameter parameter, out Locker locker);

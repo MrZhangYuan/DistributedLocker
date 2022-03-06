@@ -17,11 +17,6 @@ namespace DistributedLocker.Extensions
             services.AddSingleton<ILockOptions>(builder.Options);
             services.AddScoped<DistributedLockContext>();
 
-            foreach (var item in builder.Options.Extensions)
-            {
-                item.ApplyServices(services);
-            }
-
             return services;
         }
     }

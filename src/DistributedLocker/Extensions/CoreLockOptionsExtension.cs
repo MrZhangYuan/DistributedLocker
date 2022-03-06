@@ -55,7 +55,7 @@ namespace DistributedLocker.Extensions
 
         public void ApplyServices(IServiceCollection services)
         {
-
+            services.AddScoped<IAutoKeeper, AutoKeeper>();
         }
 
         public void Validate(ILockOptions options)

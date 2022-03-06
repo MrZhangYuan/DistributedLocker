@@ -57,12 +57,21 @@ namespace DistributedLocker.Memory
 
         public override bool TryEnter(Lockey lockey, LockParameter parameter, out Locker locker)
         {
-            throw new NotImplementedException();
+            return this.TryEnter(
+                    lockey,
+                    (_k, _p) => this.CreateLocker(_k, _p),
+                    parameter,
+                    out locker);
         }
 
         public override ValueTask<bool> TryEnterAsync(Lockey lockey, LockParameter parameter, out Locker locker)
         {
-            throw new NotImplementedException();
+            var result = this.TryEnter(
+                            lockey,
+                            parameter,
+                            out locker);
+
+            return UtilMethods.ValueTaskFromResult(result);
         }
     }
 }

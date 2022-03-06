@@ -2,6 +2,7 @@
 using DistributedLocker.Extensions;
 using DistributedLocker.Internal;
 using System;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -158,7 +159,7 @@ namespace DistributedLocker.DataBase
             {
                 return this.KeepAsync(
                         lockey,
-                        this.KeepCoreAsync, 
+                        this.KeepCoreAsync,
                         span);
             }
             else
@@ -234,6 +235,60 @@ namespace DistributedLocker.DataBase
             }
         }
 
+
+
+
+
+
+
+
+        /*
+
+        protected override Locker EnterCore(Lockey lockey, Locker locker, LockParameter param)
+        {
+            string insert = this._adapter.CreateInsert(locker);
+            string select = this._adapter.CreateSelect(lockey);
+
+            try
+            {
+                this._dbConnection.Execute(
+                    insert,
+                    locker);
+
+                return locker;
+            }
+            catch (Exception e)
+            {
+                if (!this._adapter.CheckIfConflictException(e))
+                {
+                    throw;
+                }
+            }
+
+            Locker exists = null;
+
+            //  ExecuteAsync 和 QueryFirstOrDefaultAsync 两个操作不是一个原子性的操作
+            //  所以 exists 还是可能出现为 null 的情况
+            //  也就是在 ExecuteAsync 出现并发之后 QueryFirstOrDefaultAsync 之前
+            //  冲突的锁被解掉了
+            exists = this._dbConnection.QueryFirstOrDefault<Locker>(
+                        select,
+                        new
+                        {
+#pragma warning disable IDE0037
+                            BusinessType = locker.BusinessType,
+                            BusinessCode = locker.BusinessCode
+#pragma warning restore IDE0037
+                        });
+
+            return exists;
+        }
+    }
+
+        */
+
+
+
         protected virtual Locker EnterCore(Lockey lockey, LockParameter param)
         {
             if (param == null)
@@ -298,6 +353,10 @@ namespace DistributedLocker.DataBase
                 while (true);
             }
         }
+
+
+
+
         public override bool TryEnter(Lockey lockey,
             LockParameter parameter,
             out Locker locker)
@@ -339,11 +398,11 @@ namespace DistributedLocker.DataBase
                                 update,
                                 new
                                 {
-#pragma warning disable IDE0037  
-                                    Delay = span.TotalMilliseconds,
+#pragma warning disable IDE0037
+                                Delay = span.TotalMilliseconds,
                                     Token = lockey.Token
 #pragma warning restore IDE0037
-                                });
+                            });
 
                 if (effect <= 0)
                 {

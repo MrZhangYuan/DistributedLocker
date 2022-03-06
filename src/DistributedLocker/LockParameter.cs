@@ -2,6 +2,19 @@
 
 namespace DistributedLocker
 {
+    /// <summary>
+    ///     锁重入条件
+    /// </summary>
+    [Flags]
+    public enum ReentrantContion : uint
+    {
+        IP,
+        HostName,
+        OperCode,
+        OperType,
+        ProcessId,
+        ThreadId
+    }
     public class LockParameter
     {
         /// <summary>

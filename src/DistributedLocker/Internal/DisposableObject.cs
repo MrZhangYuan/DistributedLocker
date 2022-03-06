@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace DistributedLocker.Internal
 {
-    internal class DisposableObject : IDisposable, IAsyncDisposable
+    public class DisposableObject : IDisposable, IAsyncDisposable
     {
         private EventHandler _disposing;
 
