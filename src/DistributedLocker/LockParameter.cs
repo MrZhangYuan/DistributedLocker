@@ -15,6 +15,8 @@ namespace DistributedLocker
         ProcessId,
         ThreadId
     }
+
+
     public class LockParameter
     {
         /// <summary>
@@ -85,7 +87,7 @@ namespace DistributedLocker
         /// <summary>
         ///     使用内存缓存
         /// </summary>
-        public bool UseMemoryCache
+        public bool UseCache
         {
             get;
             set;
@@ -129,7 +131,7 @@ namespace DistributedLocker
         }
 
         /// <summary>
-        ///     指定发生冲突时的消息
+        ///     指定发生冲突时的异常消息内容
         /// </summary>
         public string ConflictMsg
         {

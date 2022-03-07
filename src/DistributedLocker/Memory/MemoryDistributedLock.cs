@@ -1,77 +1,114 @@
 ﻿using DistributedLocker.Internal;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace DistributedLocker.Memory
 {
-    public class MemoryDistributedLock : CachedDistributedLock
+    public class MemoryDistributedLock : AsyncDistributedLock
     {
-        public MemoryDistributedLock(ILockOptions options)
-            : base(options)
+        private static readonly ConcurrentDictionary<Lockey, Locker> _lockers = new ConcurrentDictionary<Lockey, Locker>();
+
+        public MemoryDistributedLock(ILockOptions options, IDistributedLockCacher cacher)
+            : base(options, cacher)
         {
+
         }
 
-        public override Locker Enter(Lockey lockey, LockParameter parameter)
+        protected override bool CanUseCache() => false;
+
+        protected override Locker Enter(Lockey lockey,
+            Locker locker,
+            LockParameter param)
         {
-            return this.Enter(
-                    lockey,
-                    (_k, _p) => this.CreateLocker(_k, _p),
-                    parameter);
+            if (this.TryEnter(lockey, locker, param))
+            {
+                return locker;
+            }
+
+            throw new LockConflictException(locker);
+        }
+        protected override ValueTask<Locker> EnterAsync(Lockey lockey,
+            Locker locker,
+            LockParameter parameter)
+        {
+            this.Enter(
+                lockey,
+                locker,
+                parameter);
+
+            return UtilMethods.ValueTaskFromResult(locker);
         }
 
-        public override ValueTask<Locker> EnterAsync(Lockey lockey, LockParameter parameter)
+
+        protected override bool TryEnter(Lockey lockey,
+            Locker locker,
+            LockParameter parameter)
         {
-            return UtilMethods.ValueTaskFromResult(
-                    this.Enter(lockey, parameter));
+            bool entered = false;
+
+            _lockers.GetOrAdd(
+                lockey,
+                _k =>
+                {
+                    entered = true;
+                    return locker;
+                });
+
+            return entered;
+        }
+        protected override ValueTask<bool> TryEnterAsync(Lockey lockey,
+            Locker locker,
+            LockParameter parameter)
+        {
+            bool entered = this.TryEnter(
+                            lockey,
+                            locker,
+                            parameter);
+
+            return UtilMethods.ValueTaskFromResult(entered);
         }
 
-        public override void Exit(Lockey lockey)
+
+        protected override void Keep(Lockey lockey,
+            Locker locker,
+            TimeSpan span)
         {
-            this.Exit(lockey,
-                _k => { });
+            _lockers.AddOrUpdate(
+                lockey,
+                _k => throw new LockExpiredException(lockey),
+                (_k, _kr) =>
+                {
+                    _kr.EndTime += (long)span.TotalMilliseconds;
+                    return _kr;
+                });
         }
-
-        public override ValueTask ExitAsync(Lockey lockey)
-        {
-            this.Exit(lockey);
-
-            return UtilMethods.DefaultValueTask();
-        }
-
-        public override void Keep(Lockey lockey, TimeSpan span)
+        public override ValueTask KeepAsync(Lockey lockey,
+            Locker locker,
+            TimeSpan span)
         {
             this.Keep(
                 lockey,
-                (_k, _s) => { },
+                locker,
                 span);
-        }
-
-        public override ValueTask KeepAsync(Lockey lockey, TimeSpan span)
-        {
-            this.Keep(lockey, span);
 
             return UtilMethods.DefaultValueTask();
         }
 
-        public override bool TryEnter(Lockey lockey, LockParameter parameter, out Locker locker)
+
+        protected override void Exit(Lockey lockey, Locker locker)
         {
-            return this.TryEnter(
-                    lockey,
-                    (_k, _p) => this.CreateLocker(_k, _p),
-                    parameter,
-                    out locker);
+            _lockers.TryRemove(lockey, out _);
         }
-
-        public override ValueTask<bool> TryEnterAsync(Lockey lockey, LockParameter parameter, out Locker locker)
+        public override ValueTask ExitAsync(Lockey lockey, Locker locker)
         {
-            var result = this.TryEnter(
-                            lockey,
-                            parameter,
-                            out locker);
+            this.Exit(
+                lockey,
+                locker);
 
-            return UtilMethods.ValueTaskFromResult(result);
+            return UtilMethods.DefaultValueTask();
         }
     }
 }

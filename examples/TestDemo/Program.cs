@@ -25,7 +25,7 @@ namespace TestDemo
             {
                 config(_p)
                 .WidthRetryInterval(20)
-                .WidthMemoryCache(true)
+                .WidthCache(true)
                 .WidthDuation(200)
                 .WidthRetryTimes(3)
                 .WidthConflictPloy(ConflictPloy.Wait)

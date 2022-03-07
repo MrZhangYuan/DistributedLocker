@@ -49,7 +49,7 @@ namespace DistributedLocker
 
         public bool Equals(Lockey key)
         {
-            if (object.ReferenceEquals(key, null))
+            if (key is null)
             {
                 return false;
             }
@@ -61,10 +61,9 @@ namespace DistributedLocker
 
         //public static bool operator ==(Lockey key1, Lockey key2)
         //{
-        //    return key1 != null
+        //    return key1 is object
         //        && key1.Equals(key2);
         //}
-
         //public static bool operator !=(Lockey key1, Lockey key2)
         //{
         //    return !(key1 == key2);

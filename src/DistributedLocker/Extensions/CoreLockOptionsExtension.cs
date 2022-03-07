@@ -10,7 +10,7 @@ namespace DistributedLocker.Extensions
         private int _defaultRetryTimes = 3;
         private int _defaultDuation = 200;
         private int _defaultKeepDuation = 100;
-        private bool _useMemoryCache = false;
+        private bool _useCache = false;
         private bool _autoKeep = false;
 
         /// <summary>
@@ -43,9 +43,9 @@ namespace DistributedLocker.Extensions
             get => _defaultKeepDuation;
         }
 
-        public bool UseMemoryCache
+        public bool UseCache
         {
-            get => _useMemoryCache;
+            get => _useCache;
         }
 
         public bool AutoKeep
@@ -56,6 +56,7 @@ namespace DistributedLocker.Extensions
         public void ApplyServices(IServiceCollection services)
         {
             services.AddScoped<IAutoKeeper, AutoKeeper>();
+            services.AddSingleton<IDistributedLockCacher, MemoryDistributedLockCacher>();
         }
 
         public void Validate(ILockOptions options)
@@ -93,9 +94,9 @@ namespace DistributedLocker.Extensions
             return this;
         }
 
-        public CoreLockOptionsExtension WidthMemoryCache(bool usecache)
+        public CoreLockOptionsExtension WidthCache(bool usecache)
         {
-            this._useMemoryCache = usecache;
+            this._useCache = usecache;
             return this;
         }
 

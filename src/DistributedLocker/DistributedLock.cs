@@ -2,26 +2,36 @@
 using DistributedLocker.Internal;
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace DistributedLocker
 {
-    public abstract class DistributedLock : DisposableObject, IAsyncDistributedLock
+    public abstract class DistributedLock : DisposableObject, IDistributedLock
     {
         private readonly ILockOptions _options = null;
         private readonly CoreLockOptionsExtension _coreOptionsExtension = null;
+        private readonly IDistributedLockCacher _lockCacher = null;
+        private readonly bool? _useCache = false;
 
-
-        protected DistributedLock(ILockOptions options)
+        protected DistributedLock(ILockOptions options, IDistributedLockCacher cacher)
         {
             UtilMethods.ThrowIfNull(options, nameof(options));
 
             _options = options;
 
-            _coreOptionsExtension = this._options.FindExtension<CoreLockOptionsExtension>();
+            _lockCacher = cacher;
 
-            UtilMethods.ThrowIfNull(_coreOptionsExtension, nameof(_coreOptionsExtension));
+            _useCache = this._options.FindExtension<CoreLockOptionsExtension>()
+                        ?.UseCache;
+
+            if (_useCache == true
+                && this.CanUseCache())
+            {
+                UtilMethods.ThrowIfNull(cacher, nameof(cacher));
+            }
         }
+
+
+        protected virtual bool CanUseCache() => true;
 
 
         protected virtual LockParameter CreatLockParameter(Lockey lockey)
@@ -38,24 +48,33 @@ namespace DistributedLocker
         }
 
 
-        protected virtual Locker CreateLocker(Lockey lockey, LockParameter parameter)
+        protected virtual Locker CreateLocker(Lockey lockey,
+            LockParameter param)
         {
-            UtilMethods.ThrowIfNull(parameter, nameof(parameter));
+            UtilMethods.ThrowIfNull(param, nameof(param));
 
             return new Locker
             {
                 BusinessCode = lockey.InternalCode,
                 BusinessType = lockey.InternalType,
-                Duation = parameter.Duation,
-                IP = parameter.IP,
+
+                //  锁并不以本地 BeginTime 和 EndTime 为准，而是以服务器时间为准
+                //  所以，这两个时间戳并不会存入数据库或其他介质中
+                //  这里取值只是作为本地内存缓存之用，因为 Duation 是不变的
+                BeginTime = UtilMethods.GetTimeStamp(),
+                EndTime = UtilMethods.GetTimeStamp() + param.Duation,
+
+                Duation = param.Duation,
+                IP = param.IP,
                 Token = lockey.Token,
                 DelayTimes = 0,
-                LockMsg = parameter.LockMsg,
-                ConflictMsg = parameter.ConflictMsg,
+                LockMsg = param.LockMsg,
+                ConflictMsg = param.ConflictMsg,
                 HostName = Environment.MachineName,
-                OperCode = parameter.OperCode,
-                OperName = parameter.OperName,
-                OperType = parameter.OperType
+                OperCode = param.OperCode,
+                OperName = param.OperName,
+                OperType = param.OperType,
+                IsPersistence = param.IsPersistence
             };
         }
 
@@ -90,8 +109,11 @@ namespace DistributedLocker
         }
 
 
-        protected abstract Locker Enter(Lockey lockey, Locker locker, LockParameter param);
-        public virtual Locker Enter(Lockey lockey, LockParameter param)
+        protected abstract Locker Enter(Lockey lockey,
+            Locker locker,
+            LockParameter param);
+        public virtual Locker Enter(Lockey lockey,
+            LockParameter param)
         {
             if (param == null)
             {
@@ -105,15 +127,50 @@ namespace DistributedLocker
             do
             {
                 Locker newlocker = null;
+
                 LockConflictException cfe = null;
 
                 try
                 {
-                    newlocker = this.Enter(lockey, locker, param);
+                    bool entered = false;
 
-                    UtilMethods.ThrowIfNull(
-                        newlocker,
-                        $"对类型 {this.GetType()} 的方法 Enter(Lockey lockey, Locker locker, LockParameter param) 的调用返回了意料之外的 null 值。");
+                    if (this._useCache == true)
+                    {
+                        newlocker = this._lockCacher.GetOrEnter(
+                                    lockey,
+                                    _k =>
+                                    {
+                                        var temp = this.Enter(
+                                                    lockey,
+                                                    locker,
+                                                    param);
+
+                                        entered = true;
+
+                                        return temp;
+                                    });
+
+                        if (!entered)
+                        {
+                            cfe = new LockConflictException(newlocker);
+                        }
+                    }
+                    else
+                    {
+                        newlocker = this.Enter(
+                                    lockey,
+                                    locker,
+                                    param);
+
+                        entered = true;
+                    }
+
+                    if (entered)
+                    {
+                        UtilMethods.ThrowIfNull(
+                            newlocker,
+                            $"对类型 {this.GetType()} 的方法 Enter(Lockey lockey, Locker locker, LockParameter param) 的调用返回了意料之外的 null 值。");
+                    }
                 }
                 catch (LockConflictException e)
                 {
@@ -139,21 +196,47 @@ namespace DistributedLocker
 
 
 
-        protected abstract bool TryEnter(Lockey lockey, Locker locker, LockParameter parameter);
-        public virtual bool TryEnter(Lockey lockey, LockParameter param, out Locker locker)
+        protected abstract bool TryEnter(Lockey lockey,
+            Locker locker,
+            LockParameter parameter);
+        public virtual bool TryEnter(Lockey lockey,
+            LockParameter param,
+            out Locker locker)
         {
             if (param == null)
             {
                 param = this.CreatLockParameter(lockey);
             }
 
-            locker = this.CreateLocker(lockey, param);
+            var tplocker = this.CreateLocker(lockey, param);
 
             int retrys = 0;
 
             do
             {
-                bool entered = this.TryEnter(lockey, locker, param);
+                bool entered = false;
+
+                if (this._useCache == true)
+                {
+                    this._lockCacher.GetOrEnter(
+                        lockey,
+                        _k =>
+                        {
+                            entered = this.TryEnter(
+                                        lockey,
+                                        tplocker,
+                                        param);
+
+                            return tplocker;
+                        });
+                }
+                else
+                {
+                    entered = this.TryEnter(
+                                lockey,
+                                tplocker,
+                                param);
+                }
 
                 if (!entered
                     && param.ConflictPloy == ConflictPloy.Wait
@@ -164,7 +247,7 @@ namespace DistributedLocker
                     continue;
                 }
 
-                locker = entered ? locker : null;
+                locker = entered ? tplocker : null;
 
                 return entered;
             }
@@ -172,100 +255,40 @@ namespace DistributedLocker
         }
 
 
-
-        public abstract void Keep(Lockey lockey, TimeSpan span);
-        public abstract void Exit(Lockey lockey);
-
-
-
-        protected abstract ValueTask<Locker> EnterAsync(Lockey lockey, Locker locker, LockParameter parameter);
-        public virtual async ValueTask<Locker> EnterAsync(Lockey lockey, LockParameter param)
+        protected abstract void Keep(Lockey lockey,
+            Locker locker,
+            TimeSpan span);
+        public virtual void Keep(Lockey lockey, TimeSpan span)
         {
-            if (param == null)
+            if (_useCache == true)
             {
-                param = this.CreatLockParameter(lockey);
+                this._lockCacher.Update(
+                    lockey,
+                    span,
+                    (_k, _kr, _s) => this.Keep(_k, _kr, _s));
             }
-
-            var locker = this.CreateLocker(lockey, param);
-
-            int retrys = 0;
-
-            do
+            else
             {
-                Locker newlocker = null;
-                LockConflictException cfe = null;
-
-                try
-                {
-                    newlocker = await this.EnterAsync(lockey, locker, param);
-
-                    UtilMethods.ThrowIfNull(
-                        newlocker,
-                        $"对类型 {this.GetType()} 的方法 Enter(Lockey lockey, Locker locker, LockParameter param) 的调用返回了意料之外的 null 值。");
-                }
-                catch (LockConflictException e)
-                {
-                    cfe = e;
-                }
-
-                if (cfe != null)
-                {
-                    this.ThrowIfConflicted(
-                        cfe.ExistsLocker,
-                        param,
-                        ref retrys);
-
-                    await Task.Delay(param.RetryInterval);
-
-                    continue;
-                }
-
-                return newlocker;
+                this.Keep(lockey,
+                    null,
+                    span);
             }
-            while (true);
         }
 
 
-
-        protected abstract ValueTask<bool> TryEnterAsync(Lockey lockey, Locker locker, LockParameter parameter);
-        public virtual ValueTask<bool> TryEnterAsync(Lockey lockey, LockParameter param, out Locker locker)
+        protected abstract void Exit(Lockey lockey, Locker locker);
+        public virtual void Exit(Lockey lockey)
         {
-            if (param == null)
+            if (_useCache == true)
             {
-                param = this.CreatLockParameter(lockey);
+                this._lockCacher.Exit(
+                    lockey,
+                    (_k, _kr) => this.Exit(_k, _kr));
             }
-
-            //TODO 未对 TryEnterAsync 进行 await 之前，locker 也不为空，这是个瑕疵
-            locker = this.CreateLocker(lockey, param);
-
-            return TryEnterAsyncLocal(lockey, locker, param);
-
-            async ValueTask<bool> TryEnterAsyncLocal(Lockey lockeyi, Locker lockeri, LockParameter parami)
+            else
             {
-                int retrys = 0;
-
-                do
-                {
-                    bool entered = await this.TryEnterAsync(lockeyi, lockeri, parami);
-
-                    if (!entered
-                        && parami.ConflictPloy == ConflictPloy.Wait
-                        && retrys < parami.RetryTimes)
-                    {
-                        await Task.Delay(parami.RetryInterval);
-
-                        continue;
-                    }
-
-                    return entered;
-                }
-                while (true);
+                this.Exit(lockey, null);
             }
         }
-
-        
-
-        public abstract ValueTask KeepAsync(Lockey lockey, TimeSpan span);
-        public abstract ValueTask ExitAsync(Lockey lockey);
     }
 }

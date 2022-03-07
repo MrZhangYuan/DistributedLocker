@@ -93,5 +93,11 @@ namespace DistributedLocker
             get;
             internal set;
         }
+
+        public bool IsPersistence
+        {
+            get;
+            internal set;
+        }
     }
 }

@@ -6,7 +6,7 @@ namespace DistributedLocker
 {
     public class LockOptionsBuilder
     {
-        private ILockOptions _options;
+        private readonly ILockOptions _options;
 
         public virtual ILockOptions Options => _options;
 
@@ -54,9 +54,9 @@ namespace DistributedLocker
             return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthKeepDuation(duation));
         }
 
-        public LockOptionsBuilder WidthMemoryCache(bool usecache)
+        public LockOptionsBuilder WidthCache(bool usecache)
         {
-            return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthMemoryCache(usecache));
+            return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthCache(usecache));
         }
 
         public LockOptionsBuilder WidthAutoKeep(bool autokeep)

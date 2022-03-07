@@ -7,8 +7,9 @@ namespace DistributedLocker.Oracle
     public class OracleDatabaseDistributedLock : DatabaseDistributedLock
     {
         public OracleDatabaseDistributedLock(IDatabaseDistributedLockAdapter adapter, 
-            ILockOptions options)
-            : base(adapter, options)
+            ILockOptions options,
+            IDistributedLockCacher cacher)
+            : base(adapter, options, cacher)
         {
 
         }
