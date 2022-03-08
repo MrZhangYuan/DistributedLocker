@@ -11,6 +11,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\DistributedLocker.Oracle\DistributedLocker.Oracle.csproj" />
+		<ProjectReference Include="..\..\src\DistributedLocker.Postgres\DistributedLocker.Postgres.csproj" />
 		<ProjectReference Include="..\..\src\DistributedLocker.Redis\DistributedLocker.Redis.csproj" />
 	</ItemGroup>
 

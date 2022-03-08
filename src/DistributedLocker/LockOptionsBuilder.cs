@@ -56,12 +56,23 @@ namespace DistributedLocker
 
         public LockOptionsBuilder WidthCache(bool usecache)
         {
+            this.WithOption<MemoryCacherOptionsExtension>(_p => _p);
             return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthCache(usecache));
         }
 
         public LockOptionsBuilder WidthAutoKeep(bool autokeep)
         {
             return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthAutoKeep(autokeep));
+        }
+
+        public LockOptionsBuilder WidthPersistenceDuation(TimeSpan duation)
+        {
+            return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthPersistenceDuation(duation));
+        }
+
+        public LockOptionsBuilder WidthDefaultPersistence(bool persistence)
+        {
+            return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthDefaultPersistence(persistence));
         }
 
         public virtual LockOptionsBuilder WithOption<TExtension>(Func<TExtension, TExtension> setAction)

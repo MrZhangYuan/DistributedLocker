@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using DistributedLocker.Internal;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 
 namespace DistributedLocker.Extensions
@@ -16,7 +17,12 @@ namespace DistributedLocker.Extensions
         /// <summary>
         ///     持久化锁的过期时间
         /// </summary>
-        private TimeSpan _persistenceExpiredTime = TimeSpan.FromDays(30);
+        private TimeSpan _persistenceDuation = TimeSpan.FromDays(30);
+
+        /// <summary>
+        ///     默认持久化
+        /// </summary>
+        private bool _defaultPersistence = false;
 
         public ConflictPloy DefaultConflictPloy
         {
@@ -53,10 +59,14 @@ namespace DistributedLocker.Extensions
             get => _autoKeep;
         }
 
+        public TimeSpan PersistenceDuation
+        {
+            get => _persistenceDuation;
+        }
+
         public void ApplyServices(IServiceCollection services)
         {
             services.AddScoped<IAutoKeeper, AutoKeeper>();
-            services.AddSingleton<IDistributedLockCacher, MemoryDistributedLockCacher>();
         }
 
         public void Validate(ILockOptions options)
@@ -104,6 +114,75 @@ namespace DistributedLocker.Extensions
         {
             this._autoKeep = autokeep;
             return this;
+        }
+
+        public CoreLockOptionsExtension WidthPersistenceDuation(TimeSpan duation)
+        {
+            this._persistenceDuation = duation;
+            return this;
+        }
+
+        public CoreLockOptionsExtension WidthDefaultPersistence(bool persistence)
+        {
+            this._defaultPersistence = persistence;
+            return this;
+        }
+
+
+        internal LockParameter CreateDefaultParameter(Lockey lockey)
+        {
+            return new LockParameter
+            {
+                ConflictPloy = _defaultConflictPloy,
+                RetryInterval = _defaultRetryInterval,
+                RetryTimes = _defaultRetryTimes,
+                Duation = _defaultDuation,
+                KeepDuation = _defaultKeepDuation,
+                AutoKeep = _autoKeep,
+                IsPersistence = _defaultPersistence
+            };
+        }
+
+        internal LockParameter OverrideDefaultParameter(LockParameter param)
+        {
+            UtilMethods.ThrowIfNull(param, nameof(param));
+
+            if (!param.ConflictPloy.HasValue)
+            {
+                param.ConflictPloy = _defaultConflictPloy;
+            }
+
+            if (!param.RetryInterval.HasValue)
+            {
+                param.RetryInterval = _defaultRetryInterval;
+            }
+
+            if (!param.RetryTimes.HasValue)
+            {
+                param.RetryTimes = _defaultRetryTimes;
+            }
+
+            if (!param.Duation.HasValue)
+            {
+                param.Duation = _defaultDuation;
+            }
+
+            if (!param.KeepDuation.HasValue)
+            {
+                param.KeepDuation = _defaultKeepDuation;
+            }
+
+            if (!param.AutoKeep.HasValue)
+            {
+                param.AutoKeep = _autoKeep;
+            }
+
+            if (!param.IsPersistence.HasValue)
+            {
+                param.IsPersistence = _defaultPersistence;
+            }
+
+            return param;
         }
     }
 }

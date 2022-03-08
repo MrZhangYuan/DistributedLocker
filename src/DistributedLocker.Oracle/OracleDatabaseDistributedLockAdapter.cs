@@ -27,6 +27,7 @@ namespace DistributedLocker.Oracle
 			                                  IP VARCHAR2(32),
 			                                  TOKEN VARCHAR2(32) NOT NULL,
 			                                  DELAY_TIMES NUMBER(10,0) DEFAULT 0 NOT NULL,
+			                                  IS_PERSISTENCE NUMBER(1) DEFAULT 0 NOT NULL,
 			                                  LOCK_MSG NVARCHAR2(100),
 			                                  CONFLICT_MSG NVARCHAR2(100),
 			                                  HOST_NAME NVARCHAR2(50),
@@ -46,14 +47,17 @@ namespace DistributedLocker.Oracle
 		                                EXECUTE IMMEDIATE 'COMMENT ON COLUMN SYS_LOCKER.IP IS ''IP''';
 		                                EXECUTE IMMEDIATE 'COMMENT ON COLUMN SYS_LOCKER.TOKEN IS ''控制重入或校验的TOKEN''';
 		                                EXECUTE IMMEDIATE 'COMMENT ON COLUMN SYS_LOCKER.DELAY_TIMES IS ''延期存活次数''';
+		                                EXECUTE IMMEDIATE 'COMMENT ON COLUMN SYS_LOCKER.IS_PERSISTENCE IS ''是否持久化''';
 		                                EXECUTE IMMEDIATE 'COMMENT ON COLUMN SYS_LOCKER.LOCK_MSG IS ''锁定消息''';
 		                                EXECUTE IMMEDIATE 'COMMENT ON COLUMN SYS_LOCKER.CONFLICT_MSG IS ''并发提示消息''';
+		                                EXECUTE IMMEDIATE 'COMMENT ON COLUMN SYS_LOCKER.HOST_NAME IS ''主机名''';
 		                                EXECUTE IMMEDIATE 'COMMENT ON COLUMN SYS_LOCKER.OPER_CODE IS ''操作者代码''';
 		                                EXECUTE IMMEDIATE 'COMMENT ON COLUMN SYS_LOCKER.OPER_NAME IS ''操作者姓名''';
 		                                EXECUTE IMMEDIATE 'COMMENT ON COLUMN SYS_LOCKER.OPER_TYPE IS ''操作类型''';
 		                                EXECUTE IMMEDIATE 'COMMENT ON COLUMN SYS_LOCKER.OPER_TIME IS ''操作时间''';
 
 	                                END IF;
+                                COMMIT;
                                 END;
                             ";
 
@@ -63,7 +67,7 @@ namespace DistributedLocker.Oracle
                                 BEGIN
 
 	                                SELECT 
-		                                (SYSDATE - TO_DATE('1970-01-01 8', 'YYYY-MM-DD HH24')) * 86400000 + TO_NUMBER(TO_CHAR(SYSTIMESTAMP(3), 'FF')) INTO CURRENT_STAMP
+		                                (SYSDATE - TO_DATE('1970-01-01', 'YYYY-MM-DD HH24')) * 86400000 + TO_NUMBER(TO_CHAR(SYSTIMESTAMP(3), 'FF')) INTO CURRENT_STAMP
 	                                FROM DUAL;
  
 	                                DELETE SYS_LOCKER WHERE END_TIME < CURRENT_STAMP;
@@ -76,6 +80,7 @@ namespace DistributedLocker.Oracle
 		                                IP,
 		                                TOKEN,
 		                                DELAY_TIMES,
+                                        IS_PERSISTENCE,
 		                                LOCK_MSG,
 		                                CONFLICT_MSG,
 		                                HOST_NAME,
@@ -91,6 +96,7 @@ namespace DistributedLocker.Oracle
 		                                :IP,
 		                                :Token,
 		                                :DelayTimes,
+		                                :IsPersistence,
 		                                :LockMsg,
 		                                :ConflictMsg,
 		                                :HostName,
@@ -113,6 +119,7 @@ namespace DistributedLocker.Oracle
 	                                IP              AS   ""IP"",
 	                                TOKEN           AS   ""Token"",
 	                                DELAY_TIMES     AS   ""DelayTimes"",
+	                                IS_PERSISTENCE     AS   ""IsPersistence"",
 	                                LOCK_MSG        AS   ""LockMsg"",
 	                                CONFLICT_MSG    AS   ""ConflictMsg"",
 	                                HOST_NAME       AS   ""HostName"",
@@ -128,9 +135,10 @@ namespace DistributedLocker.Oracle
                             ";
 
         private const string DELETE = @"
-                                DELETE SYS_LOCKER 
+                                DELETE FROM SYS_LOCKER 
                                 WHERE 
                                     TOKEN = :Token
+                                AND IS_PERSISTENCE <> 1
                             ";
 
         private const string UPDATE = @"

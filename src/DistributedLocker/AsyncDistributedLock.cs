@@ -32,10 +32,7 @@ namespace DistributedLocker
             LockParameter parameter);
         public virtual async ValueTask<Locker> EnterAsync(Lockey lockey, LockParameter param)
         {
-            if (param == null)
-            {
-                param = this.CreatLockParameter(lockey);
-            }
+            param = this.CreatOrSetDefaultParameter(lockey, param);
 
             var locker = this.CreateLocker(lockey, param);
 
@@ -100,7 +97,7 @@ namespace DistributedLocker
                         param,
                         ref retrys);
 
-                    await Task.Delay(param.RetryInterval);
+                    await Task.Delay(param.RetryInterval.Value);
 
                     continue;
                 }
@@ -119,10 +116,7 @@ namespace DistributedLocker
             LockParameter param,
             out Locker locker)
         {
-            if (param == null)
-            {
-                param = this.CreatLockParameter(lockey);
-            }
+            param = this.CreatOrSetDefaultParameter(lockey, param);
 
             //  未对 TryEnterAsync 进行 await 之前，locker 也不为空，这是个瑕疵
             locker = this.CreateLocker(lockey, param);
@@ -165,7 +159,7 @@ namespace DistributedLocker
                         && parami.ConflictPloy == ConflictPloy.Wait
                         && retrys < parami.RetryTimes)
                     {
-                        await Task.Delay(parami.RetryInterval);
+                        await Task.Delay(parami.RetryInterval.Value);
 
                         continue;
                     }
@@ -190,11 +184,13 @@ namespace DistributedLocker
                         span,
                         (_k, _kr, _s) => this.KeepAsync(_k, _kr, _s));
             }
-
-            await this.KeepAsync(
-                lockey, 
-                null, 
-                span);
+            else
+            {
+                await this.KeepAsync(
+                    lockey,
+                    null,
+                    span);
+            }
         }
 
 
@@ -208,8 +204,10 @@ namespace DistributedLocker
                         lockey,
                         (_k, _kr) => this.ExitAsync(_k, _kr));
             }
-
-            await this.ExitAsync(lockey, null);
+            else
+            {
+                await this.ExitAsync(lockey, null);
+            }
         }
     }
 }

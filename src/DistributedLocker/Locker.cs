@@ -94,7 +94,7 @@ namespace DistributedLocker
             internal set;
         }
 
-        public bool IsPersistence
+        public int IsPersistence
         {
             get;
             internal set;

@@ -20,8 +20,9 @@ namespace DistributedLocker
 
             _lockCacher = cacher;
 
-            _useCache = this._options.FindExtension<CoreLockOptionsExtension>()
-                        ?.UseCache;
+            _coreOptionsExtension = this._options.FindExtension<CoreLockOptionsExtension>();
+
+            _useCache = _coreOptionsExtension?.UseCache;
 
             if (_useCache == true
                 && this.CanUseCache())
@@ -34,17 +35,27 @@ namespace DistributedLocker
         protected virtual bool CanUseCache() => true;
 
 
-        protected virtual LockParameter CreatLockParameter(Lockey lockey)
+        protected virtual LockParameter CreatOrSetDefaultParameter(Lockey lockey, LockParameter param)
         {
             UtilMethods.ThrowIfNull(lockey, nameof(lockey));
 
-            return new LockParameter
+            if (param == null)
             {
-                ConflictPloy = _coreOptionsExtension.DefaultConflictPloy,
-                RetryInterval = _coreOptionsExtension.DefaultRetryInterval,
-                RetryTimes = _coreOptionsExtension.DefaultRetryTimes,
-                Duation = _coreOptionsExtension.DefaultDuation
-            };
+                param = _coreOptionsExtension.CreateDefaultParameter(lockey);
+            }
+            else
+            {
+                param = _coreOptionsExtension.OverrideDefaultParameter(param);
+            }
+
+            return param;
+            //return new LockParameter
+            //{
+            //    ConflictPloy = _coreOptionsExtension.DefaultConflictPloy,
+            //    RetryInterval = _coreOptionsExtension.DefaultRetryInterval,
+            //    RetryTimes = _coreOptionsExtension.DefaultRetryTimes,
+            //    Duation = _coreOptionsExtension.DefaultDuation
+            //};
         }
 
 
@@ -53,6 +64,16 @@ namespace DistributedLocker
         {
             UtilMethods.ThrowIfNull(param, nameof(param));
 
+            long nowstamp = UtilMethods.GetTimeStamp();
+
+            int duation = param.IsPersistence == true
+                            ?
+                            (int)_coreOptionsExtension.PersistenceDuation.TotalMilliseconds
+                            :
+                            param.Duation.Value;
+
+            //  在分布式和集群部署中，请勿将时间类字段存入介质
+            //  原则是本机的时间只在本机缓存内比对
             return new Locker
             {
                 BusinessCode = lockey.InternalCode,
@@ -61,10 +82,10 @@ namespace DistributedLocker
                 //  锁并不以本地 BeginTime 和 EndTime 为准，而是以服务器时间为准
                 //  所以，这两个时间戳并不会存入数据库或其他介质中
                 //  这里取值只是作为本地内存缓存之用，因为 Duation 是不变的
-                BeginTime = UtilMethods.GetTimeStamp(),
-                EndTime = UtilMethods.GetTimeStamp() + param.Duation,
+                BeginTime = nowstamp,
+                EndTime = nowstamp + duation,
 
-                Duation = param.Duation,
+                Duation = duation,
                 IP = param.IP,
                 Token = lockey.Token,
                 DelayTimes = 0,
@@ -74,7 +95,8 @@ namespace DistributedLocker
                 OperCode = param.OperCode,
                 OperName = param.OperName,
                 OperType = param.OperType,
-                IsPersistence = param.IsPersistence
+                IsPersistence = param.IsPersistence == true ? 1 : 0,
+                OperTime = DateTime.Now
             };
         }
 
@@ -99,7 +121,7 @@ namespace DistributedLocker
 
                 case ConflictPloy.Execute:
                     {
-                        param.OnConflict?.Invoke(exists);
+                        param.OnConflict?.Invoke(exists, param);
                     }
                     throw new LockConflictException(exists, param.ConflictMsg);
 
@@ -115,10 +137,7 @@ namespace DistributedLocker
         public virtual Locker Enter(Lockey lockey,
             LockParameter param)
         {
-            if (param == null)
-            {
-                param = this.CreatLockParameter(lockey);
-            }
+            param = this.CreatOrSetDefaultParameter(lockey, param);
 
             var locker = this.CreateLocker(lockey, param);
 
@@ -184,7 +203,7 @@ namespace DistributedLocker
                         param,
                         ref retrys);
 
-                    Thread.Sleep(param.RetryInterval);
+                    Thread.Sleep(param.RetryInterval.Value);
 
                     continue;
                 }
@@ -203,10 +222,7 @@ namespace DistributedLocker
             LockParameter param,
             out Locker locker)
         {
-            if (param == null)
-            {
-                param = this.CreatLockParameter(lockey);
-            }
+            param = this.CreatOrSetDefaultParameter(lockey, param);
 
             var tplocker = this.CreateLocker(lockey, param);
 
@@ -242,7 +258,7 @@ namespace DistributedLocker
                     && param.ConflictPloy == ConflictPloy.Wait
                     && retrys < param.RetryTimes)
                 {
-                    Thread.Sleep(param.RetryInterval);
+                    Thread.Sleep(param.RetryInterval.Value);
 
                     continue;
                 }

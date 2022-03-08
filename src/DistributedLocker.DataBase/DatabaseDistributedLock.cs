@@ -2,6 +2,7 @@
 using DistributedLocker.Extensions;
 using DistributedLocker.Internal;
 using System;
+using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,20 +45,21 @@ namespace DistributedLocker.DataBase
                         }
 
                         _tableCreatedFlag = true;
+
+                        Interlocked.MemoryBarrier();
                     }
                 }
             }
         }
 
 
-        protected override Locker Enter(Lockey lockey, 
-            Locker locker, 
+        protected override Locker Enter(Lockey lockey,
+            Locker locker,
             LockParameter param)
         {
             using (var conn = this._adapter.CreateDbConnection())
             {
                 string insert = this._adapter.CreateInsert(locker);
-                string select = this._adapter.CreateSelect(lockey);
 
                 try
                 {
@@ -80,7 +82,7 @@ namespace DistributedLocker.DataBase
                 //  也就是在 ExecuteAsync 出现并发之后 QueryFirstOrDefaultAsync 之前
                 //  冲突的锁被解掉了
                 var exists = conn.QueryFirstOrDefault<Locker>(
-                                select,
+                                this._adapter.CreateSelect(lockey),
                                 new
                                 {
 #pragma warning disable IDE0037
@@ -92,14 +94,13 @@ namespace DistributedLocker.DataBase
                 throw new LockConflictException(exists);
             }
         }
-        protected override async ValueTask<Locker> EnterAsync(Lockey lockey, 
-            Locker locker, 
+        protected override async ValueTask<Locker> EnterAsync(Lockey lockey,
+            Locker locker,
             LockParameter parameter)
         {
             using (var conn = this._adapter.CreateDbConnection())
             {
                 string insert = this._adapter.CreateInsert(locker);
-                string select = this._adapter.CreateSelect(lockey);
 
                 try
                 {
@@ -122,7 +123,7 @@ namespace DistributedLocker.DataBase
                 //  也就是在 ExecuteAsync 出现并发之后 QueryFirstOrDefaultAsync 之前
                 //  冲突的锁被解掉了
                 var exists = await conn.QueryFirstOrDefaultAsync<Locker>(
-                                select,
+                                this._adapter.CreateSelect(lockey),
                                 new
                                 {
 #pragma warning disable IDE0037
@@ -136,14 +137,14 @@ namespace DistributedLocker.DataBase
         }
 
 
-        protected override bool TryEnter(Lockey lockey, 
+        protected override bool TryEnter(Lockey lockey,
             Locker locker,
             LockParameter parameter)
         {
             try
             {
                 this.Enter(
-                    lockey, 
+                    lockey,
                     locker,
                     parameter);
 
@@ -155,14 +156,14 @@ namespace DistributedLocker.DataBase
             }
         }
         protected override async ValueTask<bool> TryEnterAsync(Lockey lockey,
-            Locker locker, 
+            Locker locker,
             LockParameter parameter)
         {
             try
             {
                 await this.EnterAsync(
-                    lockey, 
-                    locker, 
+                    lockey,
+                    locker,
                     parameter);
 
                 return true;
@@ -175,7 +176,7 @@ namespace DistributedLocker.DataBase
 
 
         protected override void Keep(Lockey lockey,
-            Locker locker, 
+            Locker locker,
             TimeSpan span)
         {
             string update = this._adapter.CreateUpdate(lockey);
@@ -199,7 +200,7 @@ namespace DistributedLocker.DataBase
             }
         }
         public override async ValueTask KeepAsync(Lockey lockey,
-            Locker locker, 
+            Locker locker,
             TimeSpan span)
         {
             string update = this._adapter.CreateUpdate(lockey);
