@@ -1,4 +1,5 @@
-﻿using DistributedLocker.Internal;
+﻿using DistributedLocker.Extensions;
+using DistributedLocker.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
@@ -13,6 +14,8 @@ namespace DistributedLocker
 
         private readonly IServiceProvider _internalProvider;
 
+        private readonly IAutoKeeper _autoKeeper;
+
         public DistributedLockContext(ILockOptions options)
         {
             UtilMethods.ThrowIfNull(options, nameof(options));
@@ -25,6 +28,9 @@ namespace DistributedLocker
             _distributedLock = _internalProvider
                                 .GetRequiredService<IAsyncDistributedLock>();
 
+            _autoKeeper = _internalProvider
+                            .GetRequiredService<IAutoKeeper>();
+
             UtilMethods.ThrowIfNull(_distributedLock, nameof(_distributedLock));
         }
 
@@ -34,32 +40,24 @@ namespace DistributedLocker
             private readonly Lockey _lockey;
             private readonly Locker _locker;
             private readonly LockParameter _parameter;
-            private readonly ILockOptions _options;
 
-            public LockParameter Parameter
-            {
-                get
-                {
-                    return this._parameter;
-                }
-            }
+            public LockParameter Parameter => this._parameter;
+            public Lockey Lockey => _lockey;
+            public Locker Locker => _locker;
 
             public DistributedLockScope(DistributedLockContext context,
                 Lockey lockey,
                 Locker locker,
-                LockParameter parameter,
-                ILockOptions options)
+                LockParameter parameter)
             {
                 UtilMethods.ThrowIfNull(context, nameof(context));
                 UtilMethods.ThrowIfNull(lockey, nameof(lockey));
                 UtilMethods.ThrowIfNull(locker, nameof(locker));
-                UtilMethods.ThrowIfNull(options, nameof(options));
 
                 _context = context;
                 _lockey = lockey;
                 _locker = locker;
                 _parameter = parameter;
-                _options = options;
             }
 
             public void Exit()
@@ -77,13 +75,33 @@ namespace DistributedLocker
                 this._context.Keep(this._lockey, span);
             }
 
+            public void Keep()
+            {
+                this._context.Keep(this._lockey);
+            }
+
             public async ValueTask KeepAsync(TimeSpan span)
             {
                 await this._context.KeepAsync(this._lockey, span);
             }
 
+            public async ValueTask KeepAsync()
+            {
+                await this._context.KeepAsync(this._lockey);
+            }
+
+            public void AutoKeep()
+            {
+                this._context.AutoKeep(this);
+            }
+            public void AutoKeep(TimeSpan span)
+            {
+                this._context.AutoKeep(this, span);
+            }
+
             protected override async ValueTask DisposeAsyncCore()
             {
+                this._context._autoKeeper.RemoveScope(this);
                 await this._context.EndAsync(this._lockey);
             }
 
@@ -91,23 +109,24 @@ namespace DistributedLocker
             {
                 base.DisposeManagedResources();
 
+                this._context._autoKeeper.RemoveScope(this);
                 this._context.End(this._lockey);
             }
         }
 
 
-        public IAsyncLockScope CreateScope(Lockey lockey, Locker locker, LockParameter param)
+        private IAsyncLockScope CreateScope(Lockey lockey, Locker locker, LockParameter param)
         {
             var scope = new DistributedLockScope(
                         this,
                         lockey,
                         locker,
-                        param,
-                        this._options);
+                        param);
 
-            _internalProvider
-                .GetRequiredService<IAutoKeeper>()
-                .AddLockScope(scope);
+            if (_options.FindExtension<CoreLockOptionsExtension>()?.AutoKeep == true)
+            {
+                this._autoKeeper.AddLockScope(scope);
+            }
 
             return scope;
         }
@@ -125,6 +144,11 @@ namespace DistributedLocker
         private async ValueTask KeepAsync(Lockey lockey, TimeSpan span)
         {
             await this._distributedLock.KeepAsync(lockey, span);
+        }
+
+        private async ValueTask KeepAsync(Lockey lockey)
+        {
+            await this._distributedLock.KeepAsync(lockey);
         }
 
         public async ValueTask EndAsync(Lockey lockey)
@@ -167,9 +191,24 @@ namespace DistributedLocker
             this._distributedLock.Keep(lockey, span);
         }
 
+        private void Keep(Lockey lockey)
+        {
+            this._distributedLock.Keep(lockey);
+        }
+
         public void End(Lockey lockey)
         {
             this._distributedLock.Exit(lockey);
+        }
+
+        private void AutoKeep(IAsyncLockScope scope)
+        {
+            this._autoKeeper.AddLockScope(scope);
+        }
+
+        private void AutoKeep(IAsyncLockScope scope, TimeSpan span)
+        {
+            this._autoKeeper.AddLockScope(scope, span);
         }
 
         protected override void DisposeManagedResources()

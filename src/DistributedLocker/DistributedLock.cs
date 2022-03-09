@@ -11,6 +11,7 @@ namespace DistributedLocker
         private readonly CoreLockOptionsExtension _coreOptionsExtension = null;
         private readonly IDistributedLockCacher _lockCacher = null;
         private readonly bool? _useCache = false;
+        private readonly TimeSpan _defaultKeepDuation = default;
 
         protected DistributedLock(ILockOptions options, IDistributedLockCacher cacher)
         {
@@ -23,6 +24,8 @@ namespace DistributedLocker
             _coreOptionsExtension = this._options.FindExtension<CoreLockOptionsExtension>();
 
             _useCache = _coreOptionsExtension?.UseCache;
+
+            _defaultKeepDuation = TimeSpan.FromMilliseconds(_coreOptionsExtension.DefaultKeepDuation);
 
             if (_useCache == true
                 && this.CanUseCache())
@@ -49,13 +52,6 @@ namespace DistributedLocker
             }
 
             return param;
-            //return new LockParameter
-            //{
-            //    ConflictPloy = _coreOptionsExtension.DefaultConflictPloy,
-            //    RetryInterval = _coreOptionsExtension.DefaultRetryInterval,
-            //    RetryTimes = _coreOptionsExtension.DefaultRetryTimes,
-            //    Duation = _coreOptionsExtension.DefaultDuation
-            //};
         }
 
 
@@ -290,7 +286,10 @@ namespace DistributedLocker
                     span);
             }
         }
-
+        public virtual void Keep(Lockey lockey)
+        {
+            this.Keep(lockey, _defaultKeepDuation);
+        }
 
         protected abstract void Exit(Lockey lockey, Locker locker);
         public virtual void Exit(Lockey lockey)

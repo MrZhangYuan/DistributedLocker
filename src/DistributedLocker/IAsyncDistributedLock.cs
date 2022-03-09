@@ -8,6 +8,7 @@ namespace DistributedLocker
         ValueTask<Locker> EnterAsync(Lockey lockey, LockParameter parameter);
         ValueTask<bool> TryEnterAsync(Lockey lockey, LockParameter parameter, out Locker locker);
         ValueTask KeepAsync(Lockey lockey, TimeSpan span);
+        ValueTask KeepAsync(Lockey lockey);
         ValueTask ExitAsync(Lockey lockey);
     }
 }

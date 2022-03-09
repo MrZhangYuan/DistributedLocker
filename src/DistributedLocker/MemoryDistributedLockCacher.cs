@@ -65,7 +65,7 @@ namespace DistributedLocker
             {
                 updater(key, null, span);
 
-                if (_lockers.TryGetValue(key,out Locker locker))
+                if (_lockers.TryGetValue(key, out Locker locker))
                 {
                     locker.EndTime += (long)span.TotalMilliseconds;
                 }
@@ -80,9 +80,14 @@ namespace DistributedLocker
 
         public void Exit(Lockey lockey, Action<Lockey, Locker> exiter)
         {
-            _lockers.TryRemove(lockey, out _);
-
-            exiter(lockey, null);
+            try
+            {
+                _lockers.TryRemove(lockey, out _);
+            }
+            finally
+            {
+                exiter(lockey, null);
+            }
         }
 
 
@@ -119,7 +124,6 @@ namespace DistributedLocker
             TimeSpan span,
             Func<Lockey, Locker, TimeSpan, ValueTask> updater)
         {
-
             try
             {
                 await updater(key, null, span);
@@ -141,9 +145,14 @@ namespace DistributedLocker
 
         public async ValueTask ExitAsync(Lockey lockey, Func<Lockey, Locker, ValueTask> exiter)
         {
-            _lockers.TryRemove(lockey, out _);
-
-            await exiter(lockey, null);
+            try
+            {
+                _lockers.TryRemove(lockey, out _);
+            }
+            finally
+            {
+                await exiter(lockey, null);
+            }
 
             await UtilMethods.DefaultValueTask();
         }

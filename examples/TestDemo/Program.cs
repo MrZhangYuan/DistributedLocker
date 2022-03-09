@@ -16,8 +16,8 @@ namespace TestDemo
         {
             //var dsds = Process.GetCurrentProcess();
 
-            UseLock(_p => _p.UsePostgresLock(""));
-            //UseLock(_p => _p.UseOracleLock(""));
+            UseLock(_p => _p.UsePostgresLock("Server=172.16.0.20;Port=5432;UserId=chenyangyang;Password=synyi123;Database=control;"));
+            //UseLock(_p => _p.UseOracleLock("User Id=emrmix;Password=Synyi123;Data Source=172.16.1.151:1521/emrmix;"));
             //UseLock(_p => _p.UseMemoryLock());
             //UseLock(_p => _p.UseRedisLock("",0));
         }
@@ -29,12 +29,12 @@ namespace TestDemo
             services.AddDistributedLock(_p =>
             {
                 config(_p)
-                .WidthRetryInterval(20)
+                .WidthRetryInterval(50)
                 .WidthCache(true)
-                .WidthDuation(200)
-                .WidthRetryTimes(3)
+                .WidthDuation(300)
+                .WidthRetryTimes(4)
                 .WidthConflictPloy(ConflictPloy.Wait)
-                .WidthKeepDuation(100)
+                .WidthKeepDuation(2000)
                 .WidthAutoKeep(false)
                 .WidthPersistenceDuation(TimeSpan.FromDays(7))
                 .WidthDefaultPersistence(false);
@@ -53,7 +53,9 @@ namespace TestDemo
                         Console.WriteLine("锁");
                         Console.ReadKey();
 
-                        lockerscope.Keep(TimeSpan.FromMilliseconds(20 * 1000));
+                        //lockerscope.Keep(TimeSpan.FromMilliseconds(20 * 1000));
+
+                        lockerscope.AutoKeep();
 
                         Console.WriteLine("保持");
                         Console.ReadKey();

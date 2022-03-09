@@ -10,6 +10,7 @@ namespace DistributedLocker
         private readonly ILockOptions _options = null;
         private readonly IDistributedLockCacher _lockCacher = null;
         private readonly bool? _useCache = false;
+        private readonly TimeSpan _defaultKeepDuation = default;
 
         protected AsyncDistributedLock(ILockOptions options, IDistributedLockCacher cacher)
             : base(options, cacher)
@@ -18,8 +19,11 @@ namespace DistributedLocker
 
             _lockCacher = cacher;
 
-            _useCache = this._options.FindExtension<CoreLockOptionsExtension>()
-                        ?.UseCache;
+            var coreextension = this._options.FindExtension<CoreLockOptionsExtension>();
+
+            _useCache = coreextension?.UseCache;
+
+            _defaultKeepDuation = TimeSpan.FromMilliseconds(coreextension.DefaultKeepDuation);
 
             if (_useCache == true)
             {
@@ -191,6 +195,10 @@ namespace DistributedLocker
                     null,
                     span);
             }
+        }
+        public virtual async ValueTask KeepAsync(Lockey lockey)
+        {
+            await this.KeepAsync(lockey, _defaultKeepDuation);
         }
 
 
