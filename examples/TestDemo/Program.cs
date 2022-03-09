@@ -16,8 +16,8 @@ namespace TestDemo
         {
             //var dsds = Process.GetCurrentProcess();
 
-            UseLock(_p => _p.UsePostgresLock("Server=172.16.0.20;Port=5432;UserId=chenyangyang;Password=synyi123;Database=control;"));
-            //UseLock(_p => _p.UseOracleLock("User Id=emrmix;Password=Synyi123;Data Source=172.16.1.151:1521/emrmix;"));
+            //UseLock(_p => _p.UsePostgresLock(""));
+            //UseLock(_p => _p.UseOracleLock(""));
             //UseLock(_p => _p.UseMemoryLock());
             //UseLock(_p => _p.UseRedisLock("",0));
         }
