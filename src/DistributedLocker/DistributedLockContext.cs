@@ -34,12 +34,21 @@ namespace DistributedLocker
             UtilMethods.ThrowIfNull(_distributedLock, nameof(_distributedLock));
         }
 
+
+        internal enum ScopeState
+        {
+            Created,
+            Entered
+        }
+
+
         private class DistributedLockScope : DisposableObject, IAsyncLockScope
         {
             private readonly DistributedLockContext _context;
             private readonly Lockey _lockey;
             private readonly Locker _locker;
             private readonly LockParameter _parameter;
+            internal ScopeState _scopeState = ScopeState.Created;
 
             public LockParameter Parameter => this._parameter;
             public Lockey Lockey => _lockey;
@@ -60,62 +69,99 @@ namespace DistributedLocker
                 _parameter = parameter;
             }
 
-            public void Exit()
+
+
+            private void CheckState()
             {
-                this._context.End(this._lockey);
+                if (_scopeState != ScopeState.Entered)
+                {
+                    throw new ScopeInvalidStateException();
+                }
             }
 
-            public async ValueTask ExitAsync()
-            {
-                await this._context.EndAsync(this._lockey);
-            }
+
 
             public void Keep(TimeSpan span)
             {
+                this.CheckState();
                 this._context.Keep(this._lockey, span);
             }
-
             public void Keep()
             {
+                this.CheckState();
                 this._context.Keep(this._lockey);
             }
 
+
+
             public async ValueTask KeepAsync(TimeSpan span)
             {
+                this.CheckState();
                 await this._context.KeepAsync(this._lockey, span);
             }
-
             public async ValueTask KeepAsync()
             {
+                this.CheckState();
                 await this._context.KeepAsync(this._lockey);
             }
 
+
+
             public void AutoKeep()
             {
-                this._context.AutoKeep(this);
+                this.CheckState();
+                this._context._autoKeeper.AddLockScope(this);
             }
             public void AutoKeep(TimeSpan span)
             {
-                this._context.AutoKeep(this, span);
+                this.CheckState();
+                this._context._autoKeeper.AddLockScope(this, span);
             }
 
-            protected override async ValueTask DisposeAsyncCore()
+
+
+            public void Exit()
             {
+                this.CheckState();
+                this._context._autoKeeper.RemoveScope(this);
+                this._context.End(this._lockey);
+            }
+            public async ValueTask ExitAsync()
+            {
+                this.CheckState();
                 this._context._autoKeeper.RemoveScope(this);
                 await this._context.EndAsync(this._lockey);
             }
 
+
+
+            protected override async ValueTask DisposeAsyncCore()
+            {
+                this._context._autoKeeper.RemoveScope(this);
+
+                if (this._scopeState == ScopeState.Entered)
+                {
+                    await this._context.EndAsync(this._lockey);
+                }
+            }
             protected override void DisposeManagedResources()
             {
                 base.DisposeManagedResources();
 
                 this._context._autoKeeper.RemoveScope(this);
-                this._context.End(this._lockey);
+
+                if (_scopeState == ScopeState.Entered)
+                {
+                    this._context.End(this._lockey);
+                }
             }
         }
 
 
-        private IAsyncLockScope CreateScope(Lockey lockey, Locker locker, LockParameter param)
+        private IAsyncLockScope CreateScope(Lockey lockey,
+            Locker locker,
+            LockParameter param,
+            ScopeState state = ScopeState.Entered)
         {
             var scope = new DistributedLockScope(
                         this,
@@ -123,61 +169,137 @@ namespace DistributedLocker
                         locker,
                         param);
 
-            if (_options.FindExtension<CoreLockOptionsExtension>()?.AutoKeep == true)
+            return ChangeScopeState(scope, state);
+        }
+
+        private IAsyncLockScope ChangeScopeState(IAsyncLockScope scope, ScopeState state)
+        {
+            if (state == ScopeState.Entered)
             {
-                this._autoKeeper.AddLockScope(scope);
+                ((DistributedLockScope)scope)._scopeState = ScopeState.Entered;
+
+                if (scope.Parameter.AutoKeep.HasValue)
+                {
+                    if (scope.Parameter.AutoKeep == true)
+                    {
+                        this._autoKeeper.AddLockScope(scope);
+                    }
+                }
+                else if (_options.FindExtension<CoreLockOptionsExtension>()?.AutoKeep == true)
+                {
+                    this._autoKeeper.AddLockScope(scope);
+                }
             }
 
             return scope;
         }
 
-        public async ValueTask<IAsyncLockScope> BeginAsync(Lockey lockey, LockParameter parameter)
+
+
+        public async ValueTask<IAsyncLockScope> BeginAsync(Lockey lockey)
+            => await this.BeginAsync(lockey, null);
+        public async ValueTask<IAsyncLockScope> BeginAsync(Lockey lockey, LockParameter param)
         {
-            var locker = await this._distributedLock.EnterAsync(lockey, parameter);
+            param = this._distributedLock.CreatOrSetDefaultParameter(lockey, param);
+
+            var locker = await this._distributedLock.EnterAsync(lockey, param);
 
             return CreateScope(
                     lockey,
                     locker,
-                    parameter);
+                    param);
         }
+
+
+
+        public virtual ValueTask<bool> TryBeginAsync(Lockey lockey, out IAsyncLockScope scope)
+        {
+            return this.TryBeginAsync(
+                    lockey,
+                    null,
+                    out scope);
+        }
+        public virtual ValueTask<bool> TryBeginAsync(Lockey lockey,
+            LockParameter param,
+            out IAsyncLockScope scope)
+        {
+            param = this._distributedLock.CreatOrSetDefaultParameter(lockey, param);
+
+            ValueTask<bool> task = this._distributedLock.TryEnterAsync(
+                                    lockey,
+                                    param,
+                                    out Locker locker);
+
+            scope = CreateScope(
+                    lockey,
+                    locker,
+                    param,
+                    ScopeState.Created);
+
+            return TryBeginAsyncLocal(scope);
+
+            async ValueTask<bool> TryBeginAsyncLocal(IAsyncLockScope scopei)
+            {
+                var entered = await task;
+
+                if (entered)
+                {
+                    this.ChangeScopeState(scopei, ScopeState.Entered);
+                }
+
+                await UtilMethods.DefaultValueTask();
+
+                return entered;
+            }
+        }
+
+
 
         private async ValueTask KeepAsync(Lockey lockey, TimeSpan span)
-        {
-            await this._distributedLock.KeepAsync(lockey, span);
-        }
-
+            => await this._distributedLock.KeepAsync(lockey, span);
         private async ValueTask KeepAsync(Lockey lockey)
-        {
-            await this._distributedLock.KeepAsync(lockey);
-        }
+            => await this._distributedLock.KeepAsync(lockey);
+
+
 
         public async ValueTask EndAsync(Lockey lockey)
+            => await this._distributedLock.ExitAsync(lockey);
+
+
+
+        public ILockScope Begin(Lockey lockey)
+            => this.Begin(lockey, null);
+        public ILockScope Begin(Lockey lockey, LockParameter param)
         {
-            await this._distributedLock.ExitAsync(lockey);
-        }
+            param = this._distributedLock.CreatOrSetDefaultParameter(lockey, param);
 
-
-
-        public ILockScope Begin(Lockey lockey, LockParameter parameter)
-        {
-            var locker = this._distributedLock.Enter(lockey, parameter);
+            var locker = this._distributedLock.Enter(lockey, param);
 
             return CreateScope(
                     lockey,
                     locker,
-                    parameter);
+                    param);
         }
 
+
+
+        public bool TryBegin(Lockey lockey, out ILockScope scope)
+            => TryBegin(
+                lockey,
+                null,
+                out scope);
         public bool TryBegin(Lockey lockey,
-            LockParameter parameter,
+            LockParameter param,
             out ILockScope scope)
         {
-            if (this._distributedLock.TryEnter(lockey, parameter, out Locker locker))
+            param = this._distributedLock.CreatOrSetDefaultParameter(lockey, param);
+
+            if (this._distributedLock.TryEnter(lockey, param, out Locker locker))
             {
                 scope = CreateScope(
                         lockey,
                         locker,
-                        parameter);
+                        param);
 
                 return true;
             }
@@ -186,30 +308,19 @@ namespace DistributedLocker
             return false;
         }
 
-        private void Keep(Lockey lockey, TimeSpan span)
-        {
-            this._distributedLock.Keep(lockey, span);
-        }
 
+
+        private void Keep(Lockey lockey, TimeSpan span)
+            => this._distributedLock.Keep(lockey, span);
         private void Keep(Lockey lockey)
-        {
-            this._distributedLock.Keep(lockey);
-        }
+            => this._distributedLock.Keep(lockey);
+
+
 
         public void End(Lockey lockey)
-        {
-            this._distributedLock.Exit(lockey);
-        }
+            => this._distributedLock.Exit(lockey);
 
-        private void AutoKeep(IAsyncLockScope scope)
-        {
-            this._autoKeeper.AddLockScope(scope);
-        }
 
-        private void AutoKeep(IAsyncLockScope scope, TimeSpan span)
-        {
-            this._autoKeeper.AddLockScope(scope, span);
-        }
 
         protected override void DisposeManagedResources()
         {
@@ -220,7 +331,6 @@ namespace DistributedLocker
                 provider.Dispose();
             }
         }
-
         protected override async ValueTask DisposeAsyncCore()
         {
             await base.DisposeAsyncCore();

@@ -99,7 +99,9 @@ namespace DistributedLocker
             RemoveExpired();
 
             //  缓存的作用就在于此，每一次加锁之前先判断下内存
-            //  通过删除或更新的时机
+            //  同一个锁，若上次是在集群中的本节点锁定的，那么缓存就命中了，减少了一次存储IO
+            //  Keep是先更新存储里面的锁
+            //  Exit是先移除缓存
             if (_lockers.TryGetValue(key, out var exists))
             {
                 return exists;

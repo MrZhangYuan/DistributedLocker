@@ -9,10 +9,7 @@ namespace DistributedLocker.Extensions
         {
             LockOptionsBuilder builder = new LockOptionsBuilder();
 
-            if (builderact != null)
-            {
-                builderact(builder);
-            }
+            builderact?.Invoke(builder);
 
             services.AddSingleton<ILockOptions>(builder.Options);
             services.AddScoped<DistributedLockContext>();

@@ -7,12 +7,10 @@ namespace DistributedLocker.Redis
 {
     public class RedisDistributedLock : AsyncDistributedLock
     {
-        private readonly ILockOptions _options = null;
-
         public RedisDistributedLock(ILockOptions options, IDistributedLockCacher cacher)
             : base(options, cacher)
         {
-            _options = options;
+
         }
 
         public override ValueTask ExitAsync(Lockey lockey, Locker locker)

@@ -9,7 +9,7 @@ namespace DistributedLocker.Internal
     {
         public static ValueTask DefaultValueTask()
         {
-            return default(ValueTask);
+            return default;
         }
 
         public static ValueTask<T> ValueTaskFromResult<T>(T value)

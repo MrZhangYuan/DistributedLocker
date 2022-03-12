@@ -20,6 +20,8 @@ namespace DistributedLocker
             UtilMethods.ThrowIfNull(options, nameof(options));
 
             _options = options;
+
+            this.WithOption<CoreLockOptionsExtension>(_p => _p);
         }
 
 
@@ -34,14 +36,9 @@ namespace DistributedLocker
             return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthConflictPloy(conflictploy));
         }
 
-        public LockOptionsBuilder WidthRetryInterval(int interval)
+        public LockOptionsBuilder WidthRetry(int retrytimes, int interval)
         {
-            return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthRetryInterval(interval));
-        }
-
-        public LockOptionsBuilder WidthRetryTimes(int retrytimes)
-        {
-            return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthRetryTimes(retrytimes));
+            return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthRetry(retrytimes, interval));
         }
 
         public LockOptionsBuilder WidthDuation(int duation)
@@ -65,14 +62,9 @@ namespace DistributedLocker
             return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthAutoKeep(autokeep));
         }
 
-        public LockOptionsBuilder WidthPersistenceDuation(TimeSpan duation)
+        public LockOptionsBuilder WidthPersistence(bool persistence, TimeSpan duation)
         {
-            return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthPersistenceDuation(duation));
-        }
-
-        public LockOptionsBuilder WidthDefaultPersistence(bool persistence)
-        {
-            return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthDefaultPersistence(persistence));
+            return this.WithOption<CoreLockOptionsExtension>(_p => _p.WidthPersistence(persistence, duation));
         }
 
         public virtual LockOptionsBuilder WithOption<TExtension>(Func<TExtension, TExtension> setAction)

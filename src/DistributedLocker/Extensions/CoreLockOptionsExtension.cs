@@ -7,8 +7,10 @@ namespace DistributedLocker.Extensions
     public class CoreLockOptionsExtension : ILockOptionsExtension
     {
         private ConflictPloy _defaultConflictPloy = ConflictPloy.Wait;
-        private int _defaultRetryInterval = 50;
-        private int _defaultRetryTimes = 3;
+
+        //  最好 _defaultRetryInterval * _defaultRetryTimes > _defaultDuation 即可
+        private int _defaultRetryInterval = 45;
+        private int _defaultRetryTimes = 5;
         private int _defaultDuation = 200;
         private int _defaultKeepDuation = 100;
         private bool _useCache = false;
@@ -17,7 +19,7 @@ namespace DistributedLocker.Extensions
         /// <summary>
         ///     持久化锁的过期时间
         /// </summary>
-        private TimeSpan _persistenceDuation = TimeSpan.FromDays(30);
+        private TimeSpan _persistenceDuation = TimeSpan.FromDays(10);
 
         /// <summary>
         ///     默认持久化
@@ -80,15 +82,10 @@ namespace DistributedLocker.Extensions
             return this;
         }
 
-        public CoreLockOptionsExtension WidthRetryInterval(int interval)
-        {
-            this._defaultRetryInterval = interval;
-            return this;
-        }
-
-        public CoreLockOptionsExtension WidthRetryTimes(int retrytimes)
+        public CoreLockOptionsExtension WidthRetry(int retrytimes, int interval)
         {
             this._defaultRetryTimes = retrytimes;
+            this._defaultRetryInterval = interval;
             return this;
         }
 
@@ -116,18 +113,13 @@ namespace DistributedLocker.Extensions
             return this;
         }
 
-        public CoreLockOptionsExtension WidthPersistenceDuation(TimeSpan duation)
+
+        public CoreLockOptionsExtension WidthPersistence(bool persistence, TimeSpan duation)
         {
+            this._defaultPersistence = persistence;
             this._persistenceDuation = duation;
             return this;
         }
-
-        public CoreLockOptionsExtension WidthDefaultPersistence(bool persistence)
-        {
-            this._defaultPersistence = persistence;
-            return this;
-        }
-
 
         internal LockParameter CreateDefaultParameter(Lockey lockey)
         {

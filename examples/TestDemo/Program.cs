@@ -7,61 +7,94 @@ using DistributedLocker.Postgres.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace TestDemo
 {
+    public interface IDemoController
+    {
+        void TestLock();
+    }
+    public class DemoController : IDemoController
+    {
+        private readonly DistributedLockContext _distributedLockContext = null;
+
+        public DemoController(DistributedLockContext distributedLockContext)
+        {
+            _distributedLockContext = distributedLockContext;
+        }
+
+        public void TestLock()
+        {
+            Task.Factory.StartNew(async () =>
+           {
+               for (int i = 0; true; i++)
+               {
+
+
+                   await _distributedLockContext.TryBeginAsync(new Lockey("MEDICAL", (i + "").PadLeft(6, '0')), out var scope);
+                   Console.WriteLine("锁");
+                   await Task.Delay(new Random().Next(300,3000));
+                   await scope.ExitAsync();
+                   Console.WriteLine("解锁");
+                   Console.WriteLine();
+
+
+
+
+                   //using (var lockerscope = _distributedLockContext.Begin(
+                   //                            new Lockey("MEDICAL", (i + "").PadLeft(6, '0'))))
+                   //{
+                   //    Console.WriteLine("锁");
+                   //    Console.ReadKey();
+
+                   //    //lockerscope.Keep(TimeSpan.FromMilliseconds(20 * 1000));
+                   //    //Console.WriteLine("保持");
+
+                   //    lockerscope.AutoKeep();
+                   //    Console.WriteLine("自动保持");
+
+                   //    Console.ReadKey();
+                   //}
+               }
+           });
+        }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            //var dsds = Process.GetCurrentProcess();
-
-            //UseLock(_p => _p.UsePostgresLock(""));
-            //UseLock(_p => _p.UseOracleLock(""));
-            //UseLock(_p => _p.UseMemoryLock());
-            //UseLock(_p => _p.UseRedisLock("",0));
-        }
-
-        private static void UseLock(Func<LockOptionsBuilder, LockOptionsBuilder> config)
-        {
             ServiceCollection services = new ServiceCollection();
 
+            var provider = ConfigureServices(services);
+
+            provider.GetService<IDemoController>()
+                .TestLock();
+
+            Console.ReadKey();
+        }
+
+        public static IServiceProvider ConfigureServices(IServiceCollection services)
+        {
             services.AddDistributedLock(_p =>
             {
-                config(_p)
-                .WidthRetryInterval(50)
+                //_p.UsePostgresLock("")
+                _p.UseOracleLock("")
+                //_p.UseMemoryLock()
                 .WidthCache(true)
                 .WidthDuation(300)
-                .WidthRetryTimes(4)
+                .WidthRetry(4, 100)
                 .WidthConflictPloy(ConflictPloy.Wait)
-                .WidthKeepDuation(2000)
-                .WidthAutoKeep(false)
-                .WidthPersistenceDuation(TimeSpan.FromDays(7))
-                .WidthDefaultPersistence(false);
+                .WidthKeepDuation(500)
+                .WidthAutoKeep(true)
+                .WidthPersistence(false, TimeSpan.FromDays(7));
             });
 
-            var provider = services.BuildServiceProvider();
+            services.AddScoped<IDemoController, DemoController>();
 
-            for (int i = 1; true; i++)
-            {
-                using (var scope = provider.CreateScope())
-                {
-                    var context = scope.ServiceProvider.GetRequiredService<DistributedLockContext>();
-
-                    using (var lockerscope = context.Begin(new Lockey("MEDICAL", (i + "").PadLeft(6, '0')), new LockParameter { Duation = 200 }))
-                    {
-                        Console.WriteLine("锁");
-                        Console.ReadKey();
-
-                        //lockerscope.Keep(TimeSpan.FromMilliseconds(20 * 1000));
-
-                        lockerscope.AutoKeep();
-
-                        Console.WriteLine("保持");
-                        Console.ReadKey();
-                    }
-                }
-            }
+            return services.BuildServiceProvider();
         }
     }
 }

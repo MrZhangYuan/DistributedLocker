@@ -38,7 +38,7 @@ namespace DistributedLocker
         protected virtual bool CanUseCache() => true;
 
 
-        protected virtual LockParameter CreatOrSetDefaultParameter(Lockey lockey, LockParameter param)
+        public virtual LockParameter CreatOrSetDefaultParameter(Lockey lockey, LockParameter param)
         {
             UtilMethods.ThrowIfNull(lockey, nameof(lockey));
 
