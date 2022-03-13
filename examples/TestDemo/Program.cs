@@ -39,9 +39,9 @@ namespace TestDemo
         {
             services.AddDistributedLock(_p =>
             {
-                //_p.UsePostgresLock("Server=172.16.0.20;Port=5432;UserId=chenyangyang;Password=synyi123;Database=control;")
-                _p.UseOracleLock("User Id=emrmix;Password=Synyi123;Data Source=172.16.1.151:1521/emrmix;")
-                //_p.UseMemoryLock()
+                //_p.UsePostgresLock("ConnectionString")
+                //_p.UseOracleLock("ConnectionString")
+                _p.UseMemoryLock()
                 .WidthCache(true)
                 .WidthDuation(300)
                 .WidthRetry(4, 100)
