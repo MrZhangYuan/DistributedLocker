@@ -12,59 +12,18 @@ using System.Threading;
 
 namespace TestDemo
 {
-    public interface IDemoController
-    {
-        void TestLock();
-    }
-    public class DemoController : IDemoController
-    {
-        private readonly DistributedLockContext _distributedLockContext = null;
-
-        public DemoController(DistributedLockContext distributedLockContext)
-        {
-            _distributedLockContext = distributedLockContext;
-        }
-
-        public void TestLock()
-        {
-            Task.Factory.StartNew(async () =>
-           {
-               for (int i = 0; true; i++)
-               {
-
-
-                   await _distributedLockContext.TryBeginAsync(new Lockey("MEDICAL", (i + "").PadLeft(6, '0')), out var scope);
-                   Console.WriteLine("锁");
-                   await Task.Delay(new Random().Next(300,3000));
-                   await scope.ExitAsync();
-                   Console.WriteLine("解锁");
-                   Console.WriteLine();
-
-
-
-
-                   //using (var lockerscope = _distributedLockContext.Begin(
-                   //                            new Lockey("MEDICAL", (i + "").PadLeft(6, '0'))))
-                   //{
-                   //    Console.WriteLine("锁");
-                   //    Console.ReadKey();
-
-                   //    //lockerscope.Keep(TimeSpan.FromMilliseconds(20 * 1000));
-                   //    //Console.WriteLine("保持");
-
-                   //    lockerscope.AutoKeep();
-                   //    Console.WriteLine("自动保持");
-
-                   //    Console.ReadKey();
-                   //}
-               }
-           });
-        }
-    }
-
     class Program
     {
         static void Main(string[] args)
+        {
+            StandardUse();
+            //WebApiIntergration();
+        }
+
+        #region WebApiIntergration
+
+
+        public static void WebApiIntergration()
         {
             ServiceCollection services = new ServiceCollection();
 
@@ -80,8 +39,8 @@ namespace TestDemo
         {
             services.AddDistributedLock(_p =>
             {
-                //_p.UsePostgresLock("")
-                _p.UseOracleLock("")
+                //_p.UsePostgresLock("Server=172.16.0.20;Port=5432;UserId=chenyangyang;Password=synyi123;Database=control;")
+                _p.UseOracleLock("User Id=emrmix;Password=Synyi123;Data Source=172.16.1.151:1521/emrmix;")
                 //_p.UseMemoryLock()
                 .WidthCache(true)
                 .WidthDuation(300)
@@ -96,5 +55,52 @@ namespace TestDemo
 
             return services.BuildServiceProvider();
         }
+
+        #endregion
+
+
+        #region StandardUse
+
+        public static void StandardUse()
+        {
+            var builder = new LockOptionsBuilder()
+                            .UseMemoryLock()
+                            //.UsePostgresLock("ConnectionString")
+                            //.UseOracleLock("ConnectionString")
+                            .WidthCache(true)
+                            .WidthDuation(100)
+                            .WidthRetry(4, 100)
+                            .WidthConflictPloy(ConflictPloy.Wait)
+                            .WidthKeepDuation(500)
+                            .WidthAutoKeep(false)
+                            .WidthPersistence(false, TimeSpan.FromDays(7));
+
+            using (var lockcontext = new DistributedLockContext(builder.Options))
+            {
+                for (int i = 0; true; i++)
+                {
+                    using (var scope = lockcontext.Begin(new Lockey("MyLocker", i.ToString().PadLeft(6, '0'))))
+                    {
+                        //  using 内部此处便是一个基于 MyLocker 和 i.ToString().PadLeft(6, '0') 的单线程环境
+                        //  在此处便可以放心的处理一些需要基于当前 Key 进行互斥的操作
+
+                        Console.WriteLine("锁");
+                        Console.ReadKey();
+
+                        scope.Keep();
+                        Console.WriteLine("保持");
+                        Console.ReadKey();
+
+                        scope.AutoKeep();
+                        Console.WriteLine("自动保持");
+
+                        Console.ReadKey();
+                    }
+                }
+            }
+        }
+
+        #endregion
+
     }
 }
