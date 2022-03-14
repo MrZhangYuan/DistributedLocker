@@ -38,7 +38,7 @@ namespace DistributedLocker
             RemoveExpired();
 
             //  缓存的作用就在于此，每一次加锁之前先判断下内存
-            //  通过删除或更新的时机
+            //  但删除或更新缓存的时机要把控好
             if (_lockers.TryGetValue(key, out Locker exists))
             {
                 return exists;
@@ -47,7 +47,7 @@ namespace DistributedLocker
             var locker = enter(key);
 
             //  enter 是互斥的且是原子的
-            //  按理说过了 enter 之后不会出现缓存的 Update 只会出现 Add
+            //  按理说 过了 enter 之后不会出现缓存的 Update 只会出现 Add
             //  若出现 Update，可以认为 enter 的实现错误，发生了重入
             _lockers.AddOrUpdate(
                 key,
@@ -110,7 +110,7 @@ namespace DistributedLocker
             var locker = await enter(key);
 
             //  enter 是互斥的且是原子的
-            //  按理说过了 enter 之后不会出现缓存的 Update 只会出现 Add
+            //  按理说 过了 enter 之后不会出现缓存的 Update 只会出现 Add
             //  若出现 Update，可以认为 enter 的实现错误，发生了重入
             _lockers.AddOrUpdate(
                 key,
