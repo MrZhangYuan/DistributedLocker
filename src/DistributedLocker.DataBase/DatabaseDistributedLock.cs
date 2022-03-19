@@ -45,8 +45,6 @@ namespace DistributedLocker.DataBase
                         }
 
                         _tableCreatedFlag = true;
-
-                        Interlocked.MemoryBarrier();
                     }
                 }
             }

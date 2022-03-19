@@ -49,15 +49,16 @@ namespace DistributedLocker.Memory
         {
             bool entered = false;
 
-            _lockers.GetOrAdd(
-                lockey,
-                _k =>
-                {
-                    entered = true;
-                    return locker;
-                });
+            var current = _lockers.GetOrAdd(
+                            lockey,
+                            _k =>
+                            {
+                                entered = true;
+                                return locker;
+                            });
 
-            return entered;
+            return entered
+                    && object.ReferenceEquals(locker, current);
         }
         protected override ValueTask<bool> TryEnterAsync(Lockey lockey,
             Locker locker,
@@ -81,7 +82,10 @@ namespace DistributedLocker.Memory
                 _k => throw new LockExpiredException(lockey),
                 (_k, _kr) =>
                 {
-                    _kr.EndTime += (long)span.TotalMilliseconds;
+                    lock (_kr._sync)
+                    {
+                        _kr.EndTime += (long)span.TotalMilliseconds;
+                    }
                     return _kr;
                 });
         }

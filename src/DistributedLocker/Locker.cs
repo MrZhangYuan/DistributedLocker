@@ -4,6 +4,10 @@ namespace DistributedLocker
 {
     public class Locker
     {
+        internal readonly object _sync = new object();
+
+
+
         public string BusinessType
         {
             get;

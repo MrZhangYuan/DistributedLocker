@@ -49,10 +49,15 @@ namespace DistributedLocker
             //  enter 是互斥的且是原子的
             //  按理说 过了 enter 之后不会出现缓存的 Update 只会出现 Add
             //  若出现 Update，可以认为 enter 的实现错误，发生了重入
-            _lockers.AddOrUpdate(
-                key,
-                _k => locker,
-                (_k, _kr) => throw new LockReentrantException(_k));
+            //_lockers.AddOrUpdate(
+            //    key,
+            //    _k => locker,
+            //    (_k, _kr) => throw new LockReentrantException(_k));
+
+            if (!_lockers.TryAdd(key, locker))
+            {
+                throw new LockReentrantException(key);
+            }
 
             return locker;
         }
@@ -67,7 +72,10 @@ namespace DistributedLocker
 
                 if (_lockers.TryGetValue(key, out Locker locker))
                 {
-                    locker.EndTime += (long)span.TotalMilliseconds;
+                    lock (locker._sync)
+                    {
+                        locker.EndTime += (long)span.TotalMilliseconds;
+                    }
                 }
             }
             catch (Exception)
@@ -112,10 +120,15 @@ namespace DistributedLocker
             //  enter 是互斥的且是原子的
             //  按理说 过了 enter 之后不会出现缓存的 Update 只会出现 Add
             //  若出现 Update，可以认为 enter 的实现错误，发生了重入
-            _lockers.AddOrUpdate(
-                key,
-                _k => locker,
-                (_k, _kr) => throw new LockReentrantException(_k));
+            //_lockers.AddOrUpdate(
+            //    key,
+            //    _k => locker,
+            //    (_k, _kr) => throw new LockReentrantException(_k));
+
+            if (!_lockers.TryAdd(key, locker))
+            {
+                throw new LockReentrantException(key);
+            }
 
             await UtilMethods.DefaultValueTask();
 
@@ -132,7 +145,10 @@ namespace DistributedLocker
 
                 if (_lockers.TryGetValue(key, out Locker locker))
                 {
-                    locker.EndTime += (long)span.TotalMilliseconds;
+                    lock (locker._sync)
+                    {
+                        locker.EndTime += (long)span.TotalMilliseconds;
+                    }
                 }
 
                 await UtilMethods.DefaultValueTask();
