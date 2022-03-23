@@ -119,7 +119,7 @@ namespace DistributedLocker.Oracle
 	                                IP              AS   ""IP"",
 	                                TOKEN           AS   ""Token"",
 	                                DELAY_TIMES     AS   ""DelayTimes"",
-	                                IS_PERSISTENCE     AS   ""IsPersistence"",
+	                                IS_PERSISTENCE  AS   ""IsPersistence"",
 	                                LOCK_MSG        AS   ""LockMsg"",
 	                                CONFLICT_MSG    AS   ""ConflictMsg"",
 	                                HOST_NAME       AS   ""HostName"",

@@ -4,6 +4,7 @@ using DistributedLocker.Memory.Extensions;
 using DistributedLocker.Oracle.Extensions;
 using DistributedLocker.Redis.Extensions;
 using DistributedLocker.Postgres.Extensions;
+using DistributedLocker.SqlServer.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
@@ -64,9 +65,10 @@ namespace TestDemo
         public static void StandardUse()
         {
             var builder = new LockOptionsBuilder()
-                            .UseMemoryLock()
+                            //.UseMemoryLock()
                             //.UsePostgresLock("ConnectionString")
                             //.UseOracleLock("ConnectionString")
+                            .UseSqlServerLock("Data Source=192.168.31.128,1433;Initial Catalog=SYS_LOCKER_TEST;User ID=sa;Password=!@#QWEasd;TrustServerCertificate=true")
                             .WidthCache(true)
                             .WidthDuation(100)
                             .WidthRetry(4, 100)

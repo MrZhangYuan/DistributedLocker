@@ -13,6 +13,7 @@
 		<ProjectReference Include="..\..\src\DistributedLocker.Oracle\DistributedLocker.Oracle.csproj" />
 		<ProjectReference Include="..\..\src\DistributedLocker.Postgres\DistributedLocker.Postgres.csproj" />
 		<ProjectReference Include="..\..\src\DistributedLocker.Redis\DistributedLocker.Redis.csproj" />
+		<ProjectReference Include="..\..\src\DistributedLocker.SqlServer\DistributedLocker.SqlServer.csproj" />
 	</ItemGroup>
 
 </Project>

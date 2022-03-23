@@ -13,7 +13,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DistributedLocker.Redis", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestDemo", "examples\TestDemo\TestDemo.csproj", "{08F97CCC-0BBC-48F0-83A5-9ADB4651C13B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DistributedLocker.Postgres", "src\DistributedLocker.Postgres\DistributedLocker.Postgres.csproj", "{A3FCAF0D-FA6A-4604-A9E1-F3D04E841834}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DistributedLocker.Postgres", "src\DistributedLocker.Postgres\DistributedLocker.Postgres.csproj", "{A3FCAF0D-FA6A-4604-A9E1-F3D04E841834}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DistributedLocker.SqlServer", "src\DistributedLocker.SqlServer\DistributedLocker.SqlServer.csproj", "{77B09EC3-D0D2-446C-B1D0-E456A06817B1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{A3FCAF0D-FA6A-4604-A9E1-F3D04E841834}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A3FCAF0D-FA6A-4604-A9E1-F3D04E841834}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A3FCAF0D-FA6A-4604-A9E1-F3D04E841834}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77B09EC3-D0D2-446C-B1D0-E456A06817B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77B09EC3-D0D2-446C-B1D0-E456A06817B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77B09EC3-D0D2-446C-B1D0-E456A06817B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77B09EC3-D0D2-446C-B1D0-E456A06817B1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
