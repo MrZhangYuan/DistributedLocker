@@ -9,10 +9,10 @@ namespace DistributedLocker.Extensions
         private ConflictPloy _defaultConflictPloy = ConflictPloy.Wait;
 
         //  最好 _defaultRetryInterval * _defaultRetryTimes > _defaultDuation 即可
-        private int _defaultRetryInterval = 45;
+        private int _defaultRetryInterval = 50;
         private int _defaultRetryTimes = 5;
-        private int _defaultDuation = 200;
-        private int _defaultKeepDuation = 100;
+        private int _defaultDuation = 10 * 1000;
+        private int _defaultKeepDuation = 5 * 1000;
         private bool _useCache = false;
         private bool _autoKeep = false;
 

@@ -122,11 +122,14 @@ namespace DistributedLocker
 
         public void AddLockScope(IAsyncLockScope scope, TimeSpan? span)
         {
-            _scopers.AddOrUpdate(
-                scope.Lockey,
-                _k => new AutoKeeperTask(scope, _options, span)
-                        .Start(),
-                (_k, _t) => _t.Start());
+            var newtask = new AutoKeeperTask(scope, _options, span);
+
+            var task = _scopers.GetOrAdd(scope.Lockey, _k => newtask);
+
+            if (object.ReferenceEquals(newtask, task))
+            {
+                task.Start();
+            }
         }
 
         public void AddLockScope(IAsyncLockScope scope)

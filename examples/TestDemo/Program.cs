@@ -44,11 +44,11 @@ namespace TestDemo
                 //_p.UseOracleLock("ConnectionString")
                 _p.UseMemoryLock()
                 .WidthCache(true)
-                .WidthDuation(300)
+                .WidthDuation(10 * 1000)
                 .WidthRetry(4, 100)
                 .WidthConflictPloy(ConflictPloy.Wait)
-                .WidthKeepDuation(500)
-                .WidthAutoKeep(true)
+                .WidthKeepDuation(5 * 1000)
+                .WidthAutoKeep(false)
                 .WidthPersistence(false, TimeSpan.FromDays(7));
             });
 
@@ -70,10 +70,10 @@ namespace TestDemo
                             //.UseOracleLock("ConnectionString")
                             .UseSqlServerLock("Data Source=192.168.31.128,1433;Initial Catalog=SYS_LOCKER_TEST;User ID=sa;Password=!@#QWEasd;TrustServerCertificate=true")
                             .WidthCache(true)
-                            .WidthDuation(100)
+                            .WidthDuation(2 * 1000)
                             .WidthRetry(4, 100)
                             .WidthConflictPloy(ConflictPloy.Wait)
-                            .WidthKeepDuation(500)
+                            .WidthKeepDuation(1 * 1000)
                             .WidthAutoKeep(false)
                             .WidthPersistence(false, TimeSpan.FromDays(7));
 
