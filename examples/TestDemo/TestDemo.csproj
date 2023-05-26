@@ -8,12 +8,9 @@
 	<ItemGroup>
 	  <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" />
 	</ItemGroup>
-
+	
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\DistributedLocker.Oracle\DistributedLocker.Oracle.csproj" />
-		<ProjectReference Include="..\..\src\DistributedLocker.Postgres\DistributedLocker.Postgres.csproj" />
-		<ProjectReference Include="..\..\src\DistributedLocker.Redis\DistributedLocker.Redis.csproj" />
-		<ProjectReference Include="..\..\src\DistributedLocker.SqlServer\DistributedLocker.SqlServer.csproj" />
+	  <ProjectReference Include="..\..\src\DistributedLocker.DataBase\DistributedLocker.DataBase.csproj" />
 	</ItemGroup>
 
 </Project>
