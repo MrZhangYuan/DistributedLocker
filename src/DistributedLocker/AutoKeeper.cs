@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 
 namespace DistributedLocker
 {
+    /// <summary>
+    /// 自动保持
+    /// 还没想好如何去处理自动保持，这个类暂时可以一用
+    /// </summary>
     public class AutoKeeper : DisposableObject, IAutoKeeper
     {
         private class AutoKeeperTask
