@@ -4,6 +4,19 @@
   <PropertyGroup>
 	  <LangVersion>7.1</LangVersion>
 	  <TargetFramework>netstandard2.0</TargetFramework>
+	  <OutputType>Library</OutputType>
+	  <ApplicationIcon />
+	  <StartupObject />
+	  <Authors>Mr.Zhang</Authors>
+	  <PackageProjectUrl>https://github.com/MrZhangYuan/DistributedLocker</PackageProjectUrl>
+	  <RepositoryUrl>https://github.com/MrZhangYuan/DistributedLocker.git</RepositoryUrl>
+	  <RepositoryType>Git</RepositoryType>
+	  <PackageTags>C#;.NET;DistributedLocker;Lock;sync</PackageTags>
+	  <Description>C# 小型轻量基于数据库的分布式锁</Description>
+	  <IncludeSymbols>true</IncludeSymbols>
+	  <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	  <Version>1.0.0.1</Version>
+	  <AssemblyVersion>1.0.0.1</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
