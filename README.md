@@ -11,7 +11,10 @@
 
 ## Nuget 
 
-暂未提供
+- [DistributedLocker.DataBase](https://www.nuget.org/packages/DistributedLocker.DataBase/)
+- [DistributedLocker.SqlServer ](https://www.nuget.org/packages/DistributedLocker.SqlServer/)
+- [DistributedLocker.Oracle](https://www.nuget.org/packages/DistributedLocker.Oracle/)
+- [DistributedLocker.Postgres](https://www.nuget.org/packages/DistributedLocker.Postgres/)
 
 
 
